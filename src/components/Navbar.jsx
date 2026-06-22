@@ -30,7 +30,7 @@ export default function Navbar() {
     >
       <nav className="container-x flex h-16 items-center justify-between md:h-20">
         <a href="#top" className="transition-opacity hover:opacity-80">
-          <Logo />
+          <Logo className="h-11 w-auto md:h-14" />
         </a>
 
         <div className="hidden items-center gap-8 md:flex">
