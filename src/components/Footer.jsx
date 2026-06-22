@@ -12,7 +12,7 @@ export default function Footer() {
       <div className="container-x py-14">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <Logo />
+            <Logo className="h-12 w-auto" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
               AI strategy consultancy turning AI from buzzword into roadmap — and a marketplace of vetted
               engineers to build it.
