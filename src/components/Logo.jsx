@@ -1,83 +1,16 @@
-// AIM NOW wordmark — recreates the brand artwork in SVG: glossy blue
-// gradient letters with a beveled cyan edge, glow, circuit traces with
-// glowing nodes, and the diamond accent on the right.
+// AIM NOW wordmark — exact brand artwork. The PNG ships with a dark navy
+// background baked in, which blends into the site's ink theme.
 
 export default function Logo({ className = 'h-8 w-auto' }) {
   return (
-    <svg
-      viewBox="0 0 252 56"
+    <img
+      src="/aimnow.png"
+      alt="AIM NOW"
       className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      role="img"
-      aria-label="AIM NOW"
-    >
-      <defs>
-        {/* Glossy vertical face: bright highlight → cyan → deep blue */}
-        <linearGradient id="aimFace" x1="0" y1="6" x2="0" y2="48" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#cdefff" />
-          <stop offset="0.45" stopColor="#5fd0ff" />
-          <stop offset="1" stopColor="#1f6fd6" />
-        </linearGradient>
-        <linearGradient id="aimEdge" x1="0" y1="0" x2="252" y2="0" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#aee9ff" />
-          <stop offset="1" stopColor="#3fc6ff" />
-        </linearGradient>
-        <filter id="aimWordGlow" x="-15%" y="-40%" width="130%" height="180%">
-          <feGaussianBlur stdDeviation="2.2" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <filter id="aimNodeGlow" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur stdDeviation="1.4" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* Circuit traces sitting behind the letters */}
-      <g stroke="url(#aimEdge)" strokeWidth="1" strokeLinecap="round" opacity="0.45">
-        <path d="M8 14h14l4 4" />
-        <path d="M70 44h10l4-4" />
-        <path d="M120 12v8h8" />
-        <path d="M176 46h12l3-3" />
-        <path d="M214 16h10" />
-      </g>
-      <g fill="#9fe3ff" filter="url(#aimNodeGlow)">
-        <circle cx="26" cy="18" r="1.6" />
-        <circle cx="84" cy="40" r="1.6" />
-        <circle cx="128" cy="20" r="1.6" />
-        <circle cx="191" cy="43" r="1.6" />
-        <circle cx="224" cy="16" r="1.6" />
-      </g>
-
-      {/* Wordmark */}
-      <text
-        x="4"
-        y="42"
-        filter="url(#aimWordGlow)"
-        fill="url(#aimFace)"
-        stroke="url(#aimEdge)"
-        strokeWidth="0.6"
-        style={{
-          fontFamily: '"Space Grotesk", system-ui, sans-serif',
-          fontWeight: 700,
-          fontSize: '40px',
-          letterSpacing: '1px',
-        }}
-      >
-        AIM NOW
-      </text>
-
-      {/* Diamond accent on the right */}
-      <g filter="url(#aimNodeGlow)">
-        <path d="M242 22l4 6-4 6-4-6z" fill="#9fe3ff" />
-      </g>
-    </svg>
+      width={680}
+      height={248}
+      decoding="async"
+    />
   )
 }
 
