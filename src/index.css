@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink-900 text-slate-200 font-sans antialiased;
+  overflow-x: hidden;
+}
+
+/* Custom selection */
+::selection {
+  background: rgba(63, 198, 255, 0.3);
+  color: #eaf6ff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #06101f;
+}
+::-webkit-scrollbar-thumb {
+  background: #13294a;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1c3a66;
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8;
+  }
+
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-full
+      bg-gradient-to-r from-aim-blue to-cyan-glow px-7 py-3.5 text-sm font-semibold
+      text-ink-900 shadow-glow transition-all duration-300
+      hover:shadow-[0_0_50px_-6px_rgba(63,198,255,0.8)] hover:-translate-y-0.5
+      active:translate-y-0;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border
+      border-white/15 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white
+      backdrop-blur transition-all duration-300 hover:border-cyan-glow/60
+      hover:bg-white/10;
+  }
+
+  .card {
+    @apply relative overflow-hidden rounded-2xl border border-white/10
+      bg-white/[0.03] p-6 backdrop-blur-sm transition-all duration-300;
+  }
+
+  .card-hover:hover {
+    @apply border-cyan-glow/40 bg-white/[0.06] shadow-glow-sm -translate-y-1;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-cyan-glow/30
+      bg-cyan-glow/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider
+      text-cyan-glow;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-aim-sky to-cyan-glow bg-clip-text text-transparent;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm
+      text-white placeholder:text-slate-500 outline-none transition-all duration-200
+      focus:border-cyan-glow/50 focus:bg-white/[0.07] focus:shadow-glow-sm;
+  }
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Animated grid background utility */
+.bg-grid-fade {
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}

@@ -1,0 +1,14 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5fd0ff"/><stop offset="1" stop-color="#2b8cff"/>
+    </linearGradient>
+  </defs>
+  <!-- Solid gradient tile reads clearly at 16px -->
+  <rect width="64" height="64" rx="16" fill="url(#g)"/>
+  <!-- Bold 'A' for AIM NOW, knocked out in brand ink -->
+  <path d="M18 48 L32 14 L46 48 L38 48 L35.2 41 L28.8 41 L26 48 Z M31 34 L33 34 L32 30 Z"
+        fill="#06101f" fill-rule="evenodd"/>
+  <!-- circuit node dot signifying the 'NOW.' tick -->
+  <circle cx="32" cy="14" r="3.2" fill="#06101f"/>
+</svg>

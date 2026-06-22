@@ -1,0 +1,47 @@
+// AIM NOW wordmark — circuit-tech aesthetic inspired by the brand mark.
+// `variant` controls size; the glow + circuit nodes evoke the original logo.
+
+export default function Logo({ className = '', showMark = true }) {
+  return (
+    <div className={`flex items-center gap-2.5 ${className}`}>
+      {showMark && <LogoMark className="h-8 w-8 shrink-0" />}
+      <span className="font-display text-xl font-700 tracking-tight">
+        <span className="text-gradient">AIM</span>
+        <span className="text-white"> NOW</span>
+        <span className="ml-0.5 inline-block h-1.5 w-1.5 -translate-y-2 rounded-sm bg-cyan-glow shadow-glow-sm" />
+      </span>
+    </div>
+  )
+}
+
+// Circuit-node icon mark
+export function LogoMark({ className = '' }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="aimGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#5fd0ff" />
+          <stop offset="1" stopColor="#2b8cff" />
+        </linearGradient>
+        <filter id="aimGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <rect x="2" y="2" width="60" height="60" rx="14" stroke="url(#aimGrad)" strokeWidth="2.5" opacity="0.5" />
+      <g filter="url(#aimGlow)" stroke="url(#aimGrad)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        {/* stylized 'A' / arrow-up = AIM */}
+        <path d="M20 46 L32 18 L44 46" />
+        <path d="M25 36 H39" />
+      </g>
+      {/* circuit nodes */}
+      <circle cx="32" cy="18" r="3.5" fill="#5fd0ff" filter="url(#aimGlow)" />
+      <circle cx="20" cy="46" r="3" fill="#2b8cff" />
+      <circle cx="44" cy="46" r="3" fill="#2b8cff" />
+      <path d="M44 46 H54 M10 46 H20" stroke="url(#aimGrad)" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+    </svg>
+  )
+}
