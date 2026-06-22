@@ -18,10 +18,10 @@ export default function Hero() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="chip"
+            className="chip !px-5 !py-2.5 !text-sm sm:!text-base"
           >
-            <span className="h-1.5 w-1.5 animate-pulseGlow rounded-full bg-cyan-glow" />
-            AI Strategy Consultancy · UK · EU · NA · ANZ · APAC
+            <span className="h-2 w-2 animate-pulseGlow rounded-full bg-cyan-glow" />
+            AI Strategy Consultancy
           </motion.span>
 
           <motion.h1
