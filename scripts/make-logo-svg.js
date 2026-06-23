@@ -24,24 +24,51 @@ const smoothstep = (lo, hi, x) => {
 const { data, info } = await sharp(SRC).raw().ensureAlpha().toBuffer({ resolveWithObject: true })
 const { width, height, channels } = info
 
-for (let i = 0; i < data.length; i += channels) {
-  const dr = data[i] - BG[0]
-  const dg = data[i + 1] - BG[1]
-  const db = data[i + 2] - BG[2]
-  const dist = Math.sqrt(dr * dr + dg * dg + db * db)
-  data[i + 3] = Math.round(255 * smoothstep(LO, HI, dist))
+// Key out the background and, in the same pass, find the tight bounding
+// box of the visible (inked) pixels so we can crop away the uneven
+// transparent margins that make the wordmark look vertically stretched.
+const TRIM_ALPHA = 40
+let minX = width, minY = height, maxX = 0, maxY = 0
+for (let y = 0; y < height; y++) {
+  for (let x = 0; x < width; x++) {
+    const i = (y * width + x) * channels
+    const dr = data[i] - BG[0]
+    const dg = data[i + 1] - BG[1]
+    const db = data[i + 2] - BG[2]
+    const dist = Math.sqrt(dr * dr + dg * dg + db * db)
+    const a = Math.round(255 * smoothstep(LO, HI, dist))
+    data[i + 3] = a
+    if (a > TRIM_ALPHA) {
+      if (x < minX) minX = x
+      if (x > maxX) maxX = x
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+    }
+  }
 }
 
-const pngBuf = await sharp(data, { raw: { width, height, channels } }).png().toBuffer()
+// Crop to the letters plus a small, even margin for breathing room.
+const PAD = 8
+const left = Math.max(0, minX - PAD)
+const top = Math.max(0, minY - PAD)
+const cropW = Math.min(width, maxX + PAD) - left + 1
+const cropH = Math.min(height, maxY + PAD) - top + 1
+
+const pngBuf = await sharp(data, { raw: { width, height, channels } })
+  .extract({ left, top, width: cropW, height: cropH })
+  .png()
+  .toBuffer()
 
 // Write a transparent PNG (for inspection) and an SVG that embeds it.
 writeFileSync(path.join(root, 'public', 'aimnow-transparent.png'), pngBuf)
 
 const b64 = pngBuf.toString('base64')
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="AIM NOW">
-  <image href="data:image/png;base64,${b64}" width="${width}" height="${height}"/>
+// viewBox only (no fixed width/height) so CSS `height + width:auto`
+// resolves reliably for responsive sizing.
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cropW} ${cropH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="AIM NOW">
+  <image href="data:image/png;base64,${b64}" width="${cropW}" height="${cropH}"/>
 </svg>
 `
 writeFileSync(path.join(root, 'public', 'aimnow.svg'), svg)
 
-console.log(`Wrote aimnow.svg (${(svg.length / 1024).toFixed(1)} KB) and aimnow-transparent.png at ${width}x${height}`)
+console.log(`Wrote aimnow.svg (${(svg.length / 1024).toFixed(1)} KB) and aimnow-transparent.png at ${cropW}x${cropH} (ratio ${(cropW / cropH).toFixed(3)})`)

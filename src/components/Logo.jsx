@@ -6,9 +6,10 @@ export default function Logo({ className = 'h-8 w-auto' }) {
     <img
       src="/aimnow.svg"
       alt="AIM NOW"
-      className={className}
-      width={680}
-      height={248}
+      className={`block max-w-none ${className}`}
+      width={624}
+      height={195}
+      style={{ aspectRatio: '624 / 195' }}
       decoding="async"
     />
   )
