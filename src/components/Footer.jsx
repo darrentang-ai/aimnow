@@ -2,7 +2,7 @@ import Logo from './Logo'
 
 const groups = [
   { title: 'Company', links: [['About', '#about'], ['Case Studies', '#cases'], ['Contact', '#contact']] },
-  { title: 'Services', links: [['Consultancy', '#services'], ['AI Manager Portal', '#portal'], ['Become an engineer', '#contact']] },
+  { title: 'Services', links: [['Consultancy', '#services'], ['AI Manager Portal', '#portal'], ['Become an AI Manager', '#contact']] },
   { title: 'Regions', links: [['UK', '#'], ['Europe', '#'], ['North America', '#'], ['ANZ · APAC', '#']] },
 ]
 
@@ -14,8 +14,8 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <Logo className="h-10 w-auto" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
-              AI strategy consultancy turning AI from buzzword into roadmap — and a marketplace of vetted
-              engineers to build it.
+              AI strategy consultancy turning AI from buzzword into roadmap — and a marketplace of trusted
+              AI Managers to build it.
             </p>
             <a href="#portal" className="btn-primary mt-6 !px-6 !py-2.5">
               Join the Portal

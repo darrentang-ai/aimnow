@@ -1,7 +1,7 @@
 import { Reveal, SectionHead } from './ui'
 
 const values = [
-  { title: 'Reputation first', desc: 'We build from reputation — every engineer is vetted and ranked on real delivery.' },
+  { title: 'Reputation first', desc: 'We build from reputation — every AI Manager is trusted and ranked on real delivery.' },
   { title: 'Roadmap, not hype', desc: 'Strategy grounded in ROI, not the latest buzzword cycle.' },
   { title: 'Global by default', desc: 'Teams and clients across UK, Europe, North America, ANZ and APAC.' },
 ]
@@ -26,7 +26,7 @@ export default function About() {
             <p className="mt-5 text-base leading-relaxed text-slate-400">
               AIM NOW serves SMEs and enterprise clients across five regions. We help clients turn AI from
               buzzword into roadmap — then we build from reputation, pairing senior strategy with a marketplace
-              of vetted engineers.
+              of trusted AI Managers.
             </p>
             <div className="mt-8 space-y-4">
               {values.map((v) => (

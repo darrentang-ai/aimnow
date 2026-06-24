@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Reveal } from './ui'
 
-const interests = ['Join the AI Manager Portal', 'Consultancy engagement', 'Become a vetted engineer', 'General enquiry']
+const interests = ['Join the AI Manager Portal', 'Consultancy engagement', 'Become a trusted AI Manager', 'General enquiry']
 
 export default function Contact() {
   const [sent, setSent] = useState(false)

@@ -4,7 +4,7 @@ const cases = [
   {
     sector: 'Retail · SME',
     title: 'From spreadsheets to a forecasting engine',
-    desc: 'A 6-week roadmap engagement followed by Portal-matched engineers shipping a demand-forecasting model.',
+    desc: 'A 6-week roadmap engagement followed by Portal-matched AI Managers shipping a demand-forecasting model.',
     metric: '32%',
     metricLabel: 'less overstock',
     region: 'UK',
@@ -20,7 +20,7 @@ const cases = [
   {
     sector: 'Logistics · SME',
     title: 'Support automation that customers love',
-    desc: 'Portal engineers built an LLM support assistant, managed end-to-end through the delivery dashboard.',
+    desc: 'Portal AI Managers built an LLM support assistant, managed end-to-end through the delivery dashboard.',
     metric: '4.8/5',
     metricLabel: 'CSAT after launch',
     region: 'ANZ',

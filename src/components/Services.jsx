@@ -19,9 +19,9 @@ const divisions = [
   {
     tag: 'Division 02',
     title: 'AI Manager Portal',
-    desc: 'A freemium marketplace connecting businesses with vetted AI engineers — match, manage, and ship delivery in one place.',
+    desc: 'A freemium marketplace connecting businesses with trusted AI Managers — match, manage, and ship delivery in one place.',
     icon: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM3 21a9 9 0 0 1 18 0',
-    points: ['Vetted, reputation-ranked engineers', 'Freemium access to start free', 'Managed delivery & milestones', 'Scoped matching to your roadmap'],
+    points: ['Trusted, reputation-ranked AI Managers', 'Freemium access to start free', 'Managed delivery & milestones', 'Scoped matching to your roadmap'],
     href: '#portal',
     cta: 'Join the Portal',
     featured: true,
@@ -31,7 +31,7 @@ const divisions = [
 const offerings = [
   { icon: 'M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5', title: 'Strategy & Roadmaps', desc: 'Translate ambition into a sequenced, fundable plan.' },
   { icon: 'M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z', title: 'Use-case Discovery', desc: 'Find the AI bets that actually move your numbers.' },
-  { icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6', title: 'Implementation', desc: 'Vetted engineers build and ship through the Portal.' },
+  { icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6', title: 'Implementation', desc: 'Trusted AI Managers build and ship through the Portal.' },
   { icon: 'M3 3v18h18M7 16l4-4 3 3 5-6', title: 'Measurement', desc: 'ROI tracking so value is provable, not promised.' },
 ]
 

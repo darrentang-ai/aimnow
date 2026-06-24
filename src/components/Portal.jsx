@@ -2,7 +2,7 @@ import { Reveal, SectionHead } from './ui'
 
 const steps = [
   { n: '01', title: 'Create a free account', desc: 'Freemium access — describe your business and the outcome you need.' },
-  { n: '02', title: 'Get matched', desc: 'We surface vetted, reputation-ranked AI engineers scoped to your roadmap.' },
+  { n: '02', title: 'Get matched', desc: 'We surface trusted, reputation-ranked AI Managers scoped to your roadmap.' },
   { n: '03', title: 'Manage delivery', desc: 'Track milestones, comms, and outcomes from a single managed portal.' },
 ]
 
@@ -11,7 +11,7 @@ const tiers = [
     name: 'Free',
     price: '£0',
     note: 'Start exploring',
-    features: ['Browse vetted engineers', 'Post one open brief', 'Community support', 'Basic matching'],
+    features: ['Browse trusted AI Managers', 'Post one open brief', 'Community support', 'Basic matching'],
     cta: 'Create free account',
     featured: false,
   },
@@ -43,7 +43,7 @@ export default function Portal() {
         <Reveal>
           <SectionHead
             eyebrow="The AI Manager Portal"
-            title="Your marketplace of vetted AI engineers"
+            title="Your marketplace of trusted AI Managers"
             sub="A freemium platform that connects businesses with the right builders — and gives you the tools to manage delivery end to end."
           />
         </Reveal>

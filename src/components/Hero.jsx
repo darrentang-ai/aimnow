@@ -3,7 +3,7 @@ import { CircuitBg } from './ui'
 
 const stats = [
   { value: '5', label: 'Regions served' },
-  { value: '40+', label: 'Vetted AI engineers' },
+  { value: '40+', label: 'Trusted AI Managers' },
   { value: '2', label: 'Divisions, one team' },
 ]
 
