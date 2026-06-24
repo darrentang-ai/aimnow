@@ -40,8 +40,9 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.12 }}
             className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg"
           >
-            AIM NOW helps SMEs and enterprise clients cut through the hype — then we build from
-            reputation. Strategy engagements on one side, a marketplace of vetted AI engineers on the other.
+            AIM NOW helps SMEs and enterprise clients cut through the hype, building on a foundation of
+            trust and reputation. On one side, we offer strategic engagements; on the other, we provide
+            access to a marketplace of trusted AI Managers.
           </motion.p>
 
           <motion.div
