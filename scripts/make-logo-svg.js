@@ -68,6 +68,32 @@ for (let p = 0; p < width * height; p++) {
   }
 }
 
+// Trim to the dense letter band: the circuit traces under "A"/"W" are
+// joined to the letter feet by thin bridges, so they survive component
+// filtering. The row profile shows a clear gap between the letters and
+// the sparse trace rows below — zero everything outside that band.
+const rowInk = new Int32Array(height)
+for (let y = 0; y < height; y++) {
+  for (let x = 0; x < width; x++) {
+    if (data[(y * width + x) * channels + 3] > 120) rowInk[y]++
+  }
+}
+const rowMax = Math.max(...rowInk)
+const DENSE = rowMax * 0.08 // a "letter" row; feet taper but stay above this
+const GAP_RUN = 4 // consecutive sparse rows that mark the end of the letters
+let bandTop = 0
+while (bandTop < height && rowInk[bandTop] <= DENSE) bandTop++
+let bandBottom = bandTop, gap = 0
+for (let y = bandTop + 1; y < height; y++) {
+  if (rowInk[y] > DENSE) { bandBottom = y; gap = 0 }
+  else if (++gap >= GAP_RUN) break
+}
+for (let y = 0; y < height; y++) {
+  if (y < bandTop || y > bandBottom) {
+    for (let x = 0; x < width; x++) data[(y * width + x) * channels + 3] = 0
+  }
+}
+
 // Pass 2: bounding box + per-column ink profile on the cleaned alpha.
 let minY = height, maxY = 0
 const colInk = new Int32Array(width)
