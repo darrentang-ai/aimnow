@@ -16,6 +16,8 @@ const BG = [2, 6, 20] // sampled background (near-black)
 const LO = 68 // distance <= LO  -> fully transparent (drops haze + faint traces)
 const HI = 110 // distance >= HI -> fully opaque (tight glow fades across LO..HI)
 const MAX_W = 1000 // cap embedded asset width to keep the SVG lean
+const TRIM_ALPHA = 40 // alpha above this counts as "inked"
+const MIN_AREA = 300 // components smaller than this are decorative traces, not letters
 
 const smoothstep = (lo, hi, x) => {
   const t = Math.min(1, Math.max(0, (x - lo) / (hi - lo)))
@@ -25,22 +27,53 @@ const smoothstep = (lo, hi, x) => {
 const { data, info } = await sharp(SRC).raw().ensureAlpha().toBuffer({ resolveWithObject: true })
 const { width, height, channels } = info
 
-// Key out the background and, in the same pass, find the tight bounding
-// box of the visible (inked) pixels so we can crop away the uneven
-// transparent margins that make the wordmark look vertically stretched.
-const TRIM_ALPHA = 40
+// Pass 1: key out the background — alpha from distance to the bg colour.
+for (let i = 0; i < data.length; i += channels) {
+  const dr = data[i] - BG[0]
+  const dg = data[i + 1] - BG[1]
+  const db = data[i + 2] - BG[2]
+  const dist = Math.sqrt(dr * dr + dg * dg + db * db)
+  data[i + 3] = Math.round(255 * smoothstep(LO, HI, dist))
+}
+
+// Remove small disconnected components: the wordmark's circuit traces and
+// node dots survive as tiny islands separate from the solid letterforms.
+// Label 8-connected components of inked pixels and erase any below MIN_AREA.
+const label = new Int32Array(width * height).fill(-1)
+const stack = []
+for (let p = 0; p < width * height; p++) {
+  if (data[p * channels + 3] <= TRIM_ALPHA || label[p] !== -1) continue
+  const members = []
+  label[p] = p
+  stack.push(p)
+  while (stack.length) {
+    const q = stack.pop()
+    members.push(q)
+    const qx = q % width, qy = (q / width) | 0
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue
+        const nx = qx + dx, ny = qy + dy
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
+        const n = ny * width + nx
+        if (label[n] === -1 && data[n * channels + 3] > TRIM_ALPHA) {
+          label[n] = p
+          stack.push(n)
+        }
+      }
+    }
+  }
+  if (members.length < MIN_AREA) {
+    for (const m of members) data[m * channels + 3] = 0
+  }
+}
+
+// Pass 2: bounding box + per-column ink profile on the cleaned alpha.
 let minY = height, maxY = 0
-const colInk = new Int32Array(width) // inked-pixel count per column
+const colInk = new Int32Array(width)
 for (let y = 0; y < height; y++) {
   for (let x = 0; x < width; x++) {
-    const i = (y * width + x) * channels
-    const dr = data[i] - BG[0]
-    const dg = data[i + 1] - BG[1]
-    const db = data[i + 2] - BG[2]
-    const dist = Math.sqrt(dr * dr + dg * dg + db * db)
-    const a = Math.round(255 * smoothstep(LO, HI, dist))
-    data[i + 3] = a
-    if (a > TRIM_ALPHA) {
+    if (data[(y * width + x) * channels + 3] > TRIM_ALPHA) {
       colInk[x]++
       if (y < minY) minY = y
       if (y > maxY) maxY = y
