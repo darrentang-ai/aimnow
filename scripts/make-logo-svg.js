@@ -13,8 +13,8 @@ const root = path.join(dir, '..')
 const SRC = path.join(root, 'public', 'aimnow-source.png')
 
 const BG = [2, 6, 20] // sampled background (near-black)
-const LO = 22 // distance <= LO  -> fully transparent (drops faint glow haze)
-const HI = 85 // distance >= HI -> fully opaque (glow fades across LO..HI)
+const LO = 68 // distance <= LO  -> fully transparent (drops haze + faint traces)
+const HI = 110 // distance >= HI -> fully opaque (tight glow fades across LO..HI)
 const MAX_W = 1000 // cap embedded asset width to keep the SVG lean
 
 const smoothstep = (lo, hi, x) => {

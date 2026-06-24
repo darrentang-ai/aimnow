@@ -8,8 +8,8 @@ export default function Logo({ className = 'h-8 w-auto' }) {
       alt="AIM NOW"
       className={`block max-w-none ${className}`}
       width={1000}
-      height={160}
-      style={{ aspectRatio: '1000 / 160' }}
+      height={165}
+      style={{ aspectRatio: '1000 / 165' }}
       decoding="async"
     />
   )

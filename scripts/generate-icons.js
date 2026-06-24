@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const pub = join(__dirname, '..', 'public')
 
 // "A" crop within the transparent wordmark (tight bbox of the glyph).
-const AI = { left: 33, top: 16, width: 156, height: 130 }
+const AI = { left: 9, top: 18, width: 139, height: 130 }
 
 const aiBuf = await sharp(join(pub, 'aimnow-transparent.png')).extract(AI).png().toBuffer()
 
