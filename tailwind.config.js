@@ -33,9 +33,6 @@ export default {
         glow: '0 0 40px -8px rgba(63, 198, 255, 0.55)',
         'glow-sm': '0 0 20px -6px rgba(63, 198, 255, 0.45)',
       },
-      backgroundImage: {
-        grid: 'linear-gradient(rgba(63,198,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(63,198,255,.06) 1px, transparent 1px)',
-      },
       keyframes: {
         float: {
           '0%, 100%': { transform: 'translateY(0)' },

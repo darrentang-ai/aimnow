@@ -19,7 +19,6 @@ export function Reveal({ children, delay = 0, y = 24, className = '' }) {
 export function CircuitBg({ className = '' }) {
   return (
     <div className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`} aria-hidden="true">
-      <div className="absolute inset-0 bg-grid bg-grid-fade" />
       <div className="absolute -top-40 left-1/2 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-aim-blue/20 blur-[120px]" />
       <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-cyan-glow/10 blur-[100px] animate-pulseGlow" />
       <div className="absolute bottom-0 -left-32 h-96 w-96 rounded-full bg-aim-blue/10 blur-[100px]" />
