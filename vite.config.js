@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'AIM NOW — AI Strategy Consultancy',
+        name: 'AIM NOW — AI Management and Consultancy',
         short_name: 'AIM NOW',
         description:
           'AI strategy consultancy turning AI from buzzword into roadmap. Consultancy + the AI Manager Portal marketplace.',
