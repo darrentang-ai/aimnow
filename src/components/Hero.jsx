@@ -21,7 +21,7 @@ export default function Hero() {
             className="chip !px-5 !py-2.5 !text-sm sm:!text-base"
           >
             <span className="h-2 w-2 animate-pulseGlow rounded-full bg-cyan-glow" />
-            AI Strategy Consultancy
+            AI Management and Consultancy
           </motion.span>
 
           <motion.h1
