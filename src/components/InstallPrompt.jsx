@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { LogoMark } from './Logo'
 
 // Captures the beforeinstallprompt event and offers a custom A2HS banner.
 export default function InstallPrompt() {
@@ -34,7 +33,7 @@ export default function InstallPrompt() {
   return (
     <div className="fixed inset-x-4 bottom-4 z-[60] mx-auto max-w-sm">
       <div className="flex items-center gap-3 rounded-2xl border border-cyan-glow/30 bg-ink-800/95 p-3 shadow-glow backdrop-blur-xl">
-        <LogoMark className="h-10 w-10 shrink-0" />
+        <img src="/favicon.svg" alt="AIM NOW" className="h-10 w-10 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-600 text-white">Install AIM NOW</p>
           <p className="truncate text-xs text-slate-400">Add to your home screen for instant access.</p>
