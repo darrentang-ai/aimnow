@@ -36,9 +36,36 @@ for (let i = 0; i < data.length; i += channels) {
   data[i + 3] = Math.round(255 * smoothstep(LO, HI, dist))
 }
 
-// Remove small disconnected components: the wordmark's circuit traces and
-// node dots survive as tiny islands separate from the solid letterforms.
-// Label 8-connected components of inked pixels and erase any below MIN_AREA.
+// Trim to the dense letter band first: the circuit traces under "A"/"W"
+// are joined to the letter feet by thin bridges. The row profile shows a
+// clear gap between the letters and the sparse trace rows below — zero
+// everything outside that band, which severs the bridges.
+const rowInk = new Int32Array(height)
+for (let y = 0; y < height; y++) {
+  for (let x = 0; x < width; x++) {
+    if (data[(y * width + x) * channels + 3] > 120) rowInk[y]++
+  }
+}
+const rowMax = Math.max(...rowInk)
+const DENSE = rowMax * 0.08 // a "letter" row; feet taper but stay above this
+const GAP_RUN = 4 // consecutive sparse rows that mark the end of the letters
+let bandTop = 0
+while (bandTop < height && rowInk[bandTop] <= DENSE) bandTop++
+let bandBottom = bandTop, gap = 0
+for (let y = bandTop + 1; y < height; y++) {
+  if (rowInk[y] > DENSE) { bandBottom = y; gap = 0 }
+  else if (++gap >= GAP_RUN) break
+}
+for (let y = 0; y < height; y++) {
+  if (y < bandTop || y > bandBottom) {
+    for (let x = 0; x < width; x++) data[(y * width + x) * channels + 3] = 0
+  }
+}
+
+// Then remove small disconnected components. Run after the band trim so
+// that remnants orphaned by severing a bridge (e.g. a node dot left above
+// the baseline) become their own small islands and get erased too.
+// Label 8-connected components of inked pixels; erase any below MIN_AREA.
 const label = new Int32Array(width * height).fill(-1)
 const stack = []
 for (let p = 0; p < width * height; p++) {
@@ -65,32 +92,6 @@ for (let p = 0; p < width * height; p++) {
   }
   if (members.length < MIN_AREA) {
     for (const m of members) data[m * channels + 3] = 0
-  }
-}
-
-// Trim to the dense letter band: the circuit traces under "A"/"W" are
-// joined to the letter feet by thin bridges, so they survive component
-// filtering. The row profile shows a clear gap between the letters and
-// the sparse trace rows below — zero everything outside that band.
-const rowInk = new Int32Array(height)
-for (let y = 0; y < height; y++) {
-  for (let x = 0; x < width; x++) {
-    if (data[(y * width + x) * channels + 3] > 120) rowInk[y]++
-  }
-}
-const rowMax = Math.max(...rowInk)
-const DENSE = rowMax * 0.08 // a "letter" row; feet taper but stay above this
-const GAP_RUN = 4 // consecutive sparse rows that mark the end of the letters
-let bandTop = 0
-while (bandTop < height && rowInk[bandTop] <= DENSE) bandTop++
-let bandBottom = bandTop, gap = 0
-for (let y = bandTop + 1; y < height; y++) {
-  if (rowInk[y] > DENSE) { bandBottom = y; gap = 0 }
-  else if (++gap >= GAP_RUN) break
-}
-for (let y = 0; y < height; y++) {
-  if (y < bandTop || y > bandBottom) {
-    for (let x = 0; x < width; x++) data[(y * width + x) * channels + 3] = 0
   }
 }
 
