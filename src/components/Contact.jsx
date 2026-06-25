@@ -34,26 +34,6 @@ export default function Contact() {
                   Create a free Portal account, scope a consultancy engagement, or just ask a question.
                   We typically reply within one business day.
                 </p>
-
-                <div className="mt-8 space-y-4 text-sm">
-                  <a href="mailto:hello@aimnow.io" className="flex items-center gap-3 text-slate-300 transition-colors hover:text-cyan-glow">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-glow/10 ring-1 ring-cyan-glow/30">
-                      <svg viewBox="0 0 24 24" className="h-4 w-4 text-cyan-glow" fill="none">
-                        <path d="M4 4h16v16H4zM4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
-                    hello@aimnow.io
-                  </a>
-                  <div className="flex items-center gap-3 text-slate-300">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-glow/10 ring-1 ring-cyan-glow/30">
-                      <svg viewBox="0 0 24 24" className="h-4 w-4 text-cyan-glow" fill="none">
-                        <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="currentColor" strokeWidth="1.8" />
-                        <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.8" />
-                      </svg>
-                    </span>
-                    UK · EU · NA · ANZ · APAC
-                  </div>
-                </div>
               </Reveal>
             </div>
 

@@ -1,7 +1,7 @@
 import Logo from './Logo'
 
 const groups = [
-  { title: 'Company', links: [['About', '#about'], ['Case Studies', '#cases'], ['Contact', '#contact']] },
+  { title: 'Company', links: [['About', '#about'], ['Contact', '#contact']] },
   { title: 'Services', links: [['Consultancy', '#services'], ['AI Manager Portal', '#portal'], ['Become an AI Manager', '#contact']] },
   { title: 'Regions', links: [['UK', '#'], ['Europe', '#'], ['North America', '#'], ['ANZ · APAC', '#']] },
 ]

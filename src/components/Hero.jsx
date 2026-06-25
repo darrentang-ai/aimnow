@@ -1,12 +1,6 @@
 import { motion } from 'framer-motion'
 import { CircuitBg } from './ui'
 
-const stats = [
-  { value: '5', label: 'Regions served' },
-  { value: '40+', label: 'Trusted AI Managers' },
-  { value: '2', label: 'Divisions, one team' },
-]
-
 export default function Hero() {
   return (
     <section id="top" className="relative isolate overflow-hidden pt-28 pb-20 md:pt-40 md:pb-28">
@@ -40,7 +34,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.12 }}
             className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-slate-300 sm:text-lg"
           >
-            AIM NOW helps SMEs and enterprise clients cut through the hype, building on a foundation of
+            AIM NOW helps small and medium-sized businesses cut through the hype, building on a foundation of
             trust and reputation. On one side, we offer strategic engagements; on the other, we provide
             access to a marketplace of trusted AI Managers.
           </motion.p>
@@ -60,20 +54,6 @@ export default function Hero() {
             <a href="#services" className="btn-ghost w-full sm:w-auto !text-sm sm:!text-base">
               Explore Consultancy
             </a>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="mx-auto mt-16 grid max-w-xl grid-cols-3 gap-4 border-t border-white/10 pt-8"
-          >
-            {stats.map((s) => (
-              <div key={s.label}>
-                <div className="font-display text-3xl font-700 text-gradient sm:text-4xl">{s.value}</div>
-                <div className="mt-1 text-xs text-slate-400 sm:text-sm">{s.label}</div>
-              </div>
-            ))}
           </motion.div>
         </div>
       </div>
