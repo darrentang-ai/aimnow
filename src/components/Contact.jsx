@@ -36,13 +36,13 @@ export default function Contact() {
                 </p>
 
                 <div className="mt-8 space-y-4 text-sm">
-                  <a href="mailto:hello@aimnow.ai" className="flex items-center gap-3 text-slate-300 transition-colors hover:text-cyan-glow">
+                  <a href="mailto:hello@aimnow.io" className="flex items-center gap-3 text-slate-300 transition-colors hover:text-cyan-glow">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-glow/10 ring-1 ring-cyan-glow/30">
                       <svg viewBox="0 0 24 24" className="h-4 w-4 text-cyan-glow" fill="none">
                         <path d="M4 4h16v16H4zM4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </span>
-                    hello@aimnow.ai
+                    hello@aimnow.io
                   </a>
                   <div className="flex items-center gap-3 text-slate-300">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-glow/10 ring-1 ring-cyan-glow/30">
