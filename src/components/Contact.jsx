@@ -23,7 +23,7 @@ export default function Contact() {
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-ink-800 to-ink-900 shadow-glow-sm">
           <div className="grid lg:grid-cols-2">
             {/* Left — pitch */}
-            <div className="relative p-8 md:p-12">
+            <div className="relative flex flex-col justify-center p-8 md:p-12">
               <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-aim-blue/20 blur-[100px]" />
               <Reveal>
                 <span className="chip mb-4">Get started</span>

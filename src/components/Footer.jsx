@@ -3,14 +3,13 @@ import Logo from './Logo'
 const groups = [
   { title: 'Company', links: [['About', '#about'], ['Contact', '#contact']] },
   { title: 'Services', links: [['Consultancy', '#services'], ['AI Manager Portal', '#portal'], ['Become an AI Manager', '#contact']] },
-  { title: 'Regions', links: [['UK', '#'], ['Europe', '#'], ['North America', '#'], ['ANZ · APAC', '#']] },
 ]
 
 export default function Footer() {
   return (
     <footer className="relative border-t border-white/10 bg-ink-900">
       <div className="container-x py-14">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <Logo className="h-10 w-auto" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
