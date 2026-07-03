@@ -17,7 +17,7 @@ const tiers = [
   },
   {
     name: 'Pro',
-    price: '£149',
+    price: '£49',
     note: 'per month',
     features: ['Unlimited briefs', 'Priority matching', 'Managed delivery dashboard', 'Milestone & escrow tools', 'Dedicated success manager'],
     cta: 'Start Pro',
