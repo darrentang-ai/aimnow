@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Eyebrow } from './ui'
 import { promptInstall } from '../lib/pwaInstall'
 
 export default function Hero() {
@@ -6,15 +7,13 @@ export default function Hero() {
     <section id="top" className="relative isolate overflow-hidden pt-28 pb-20 md:pt-40 md:pb-28">
       <div className="container-x relative">
         <div className="mx-auto max-w-4xl text-center">
-          <motion.span
+          <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2.5 text-sm font-semibold text-cyan-glow sm:text-base"
           >
-            <span className="h-2 w-2 animate-pulseGlow rounded-full bg-cyan-glow" />
-            AI Management and Consultancy
-          </motion.span>
+            <Eyebrow center>AI Management and Consultancy</Eyebrow>
+          </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
