@@ -74,11 +74,6 @@ export default function Portal() {
                     : 'card-hover'
                 }`}
               >
-                {t.featured && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 chip !bg-cyan-glow !text-ink-900">
-                    Recommended
-                  </span>
-                )}
                 <div className="text-sm font-semibold uppercase tracking-wider text-cyan-glow">{t.name}</div>
                 <div className="mt-3 flex items-end gap-1.5">
                   <span className="font-display text-4xl font-700 text-white">{t.price}</span>
