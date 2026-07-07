@@ -3,18 +3,51 @@ import { Reveal, Eyebrow } from './ui'
 
 const interests = ['Join the AI Manager Portal', 'Consultancy engagement', 'Become a trusted AI Manager', 'General enquiry']
 
+// Web3Forms delivers submissions to the configured inbox (darren.tang@gmail.com).
+// This access key is public by design and safe to ship in client code.
+const WEB3FORMS_ACCESS_KEY = '8e889530-28a3-4589-ad7b-d5957f298073'
+
 export default function Contact() {
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', email: '', company: '', interest: interests[0], message: '' })
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
-    // No backend wired yet — surface a success state and log the payload.
-    // Swap this for a real endpoint (e.g. /api/lead) when available.
-    console.log('Lead submitted:', form)
-    setSent(true)
+    // Honeypot: bots fill hidden fields — silently drop them.
+    if (e.target.botcheck?.value) return
+
+    setSending(true)
+    setError('')
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_ACCESS_KEY,
+          subject: `New AIM NOW enquiry — ${form.interest}`,
+          from_name: 'AIM NOW website',
+          name: form.name,
+          email: form.email,
+          company: form.company || '—',
+          interest: form.interest,
+          message: form.message || '—',
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSent(true)
+      } else {
+        setError(data.message || 'Something went wrong. Please try again.')
+      }
+    } catch {
+      setError('Network error — please try again in a moment.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -55,6 +88,8 @@ export default function Contact() {
                 </div>
               ) : (
                 <form onSubmit={onSubmit} className="space-y-4">
+                  {/* Honeypot — hidden from users, catches bots */}
+                  <input type="text" name="botcheck" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Name" required>
                       <input required value={form.name} onChange={update('name')} className="input" placeholder="Jane Doe" />
@@ -76,9 +111,18 @@ export default function Contact() {
                   <Field label="Message">
                     <textarea value={form.message} onChange={update('message')} rows={4} className="input resize-none" placeholder="Tell us what you're working on..." />
                   </Field>
-                  <button type="submit" className="btn-primary w-full">
-                    Send message
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {sending ? 'Sending…' : 'Send message'}
                   </button>
+                  {error && (
+                    <p className="text-center text-sm text-red-400" role="alert">
+                      {error}
+                    </p>
+                  )}
                   <p className="text-center text-xs text-slate-500">
                     By submitting you agree to be contacted about your enquiry.
                   </p>
