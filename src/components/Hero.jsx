@@ -13,7 +13,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="chip !px-5 !py-2.5 !text-sm sm:!text-base !normal-case !tracking-normal"
+            className="inline-flex items-center gap-2.5 text-sm font-semibold text-cyan-glow sm:text-base"
           >
             <span className="h-2 w-2 animate-pulseGlow rounded-full bg-cyan-glow" />
             AI Management and Consultancy

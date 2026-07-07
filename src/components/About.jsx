@@ -1,4 +1,4 @@
-import { Reveal, SectionHead } from './ui'
+import { Reveal, Eyebrow } from './ui'
 
 const values = [
   { title: 'Reputation first', desc: 'We build from reputation — every AI Manager is trusted and ranked on real delivery.' },
@@ -12,7 +12,7 @@ export default function About() {
       <div className="container-x">
         <div className="mx-auto max-w-2xl">
           <Reveal>
-            <span className="chip mb-4">Who we are</span>
+            <Eyebrow className="mb-5">Who we are</Eyebrow>
             <h2 className="font-display text-3xl font-700 leading-tight text-white sm:text-4xl">
               An AI strategy consultancy built to <span className="text-gradient">deliver</span>, not just advise.
             </h2>
