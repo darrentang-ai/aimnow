@@ -36,9 +36,6 @@ const tiers = [
 export default function Portal() {
   return (
     <section id="portal" className="relative overflow-hidden py-20 md:py-28">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-ink-800/60 via-ink-900 to-ink-900" />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-96 w-[50rem] -translate-x-1/2 rounded-full bg-aim-blue/10 blur-[120px]" />
-
       <div className="container-x">
         <Reveal>
           <SectionHead

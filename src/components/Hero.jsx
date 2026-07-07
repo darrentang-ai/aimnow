@@ -1,12 +1,9 @@
 import { motion } from 'framer-motion'
-import { CircuitBg } from './ui'
 import { promptInstall } from '../lib/pwaInstall'
 
 export default function Hero() {
   return (
     <section id="top" className="relative isolate overflow-hidden pt-28 pb-20 md:pt-40 md:pb-28">
-      <CircuitBg />
-
       <div className="container-x relative">
         <div className="mx-auto max-w-4xl text-center">
           <motion.span

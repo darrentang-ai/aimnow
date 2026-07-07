@@ -24,7 +24,6 @@ export default function Contact() {
           <div className="grid lg:grid-cols-2">
             {/* Left — pitch */}
             <div className="relative flex flex-col justify-center p-8 md:p-12">
-              <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-aim-blue/20 blur-[100px]" />
               <Reveal>
                 <Eyebrow className="mb-4">Get started</Eyebrow>
                 <h2 className="font-display text-3xl font-700 leading-tight text-white sm:text-4xl">
