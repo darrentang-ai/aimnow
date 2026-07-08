@@ -50,7 +50,7 @@ export default function Portal() {
           {steps.map((s, i) => (
             <Reveal key={s.n} delay={i * 0.08}>
               <div className="card h-full">
-                <div className="font-display text-4xl font-700 text-white/10">{s.n}</div>
+                <div className="font-display text-4xl font-700 text-cyan-glow/20">{s.n}</div>
                 <h3 className="mt-2 font-display text-lg font-600 text-white">{s.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{s.desc}</p>
               </div>
