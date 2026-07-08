@@ -11,7 +11,7 @@ const tiers = [
     name: 'Free',
     price: '£0',
     note: 'Start exploring',
-    features: ['Post unlimited projects', 'Notified when bids arrive', 'Browse AI Manager profiles', 'Community support'],
+    features: ['Post projects', 'Notified when bids arrive', 'Browse AI Manager profiles', 'Community support'],
     cta: 'Create free account',
     featured: false,
   },
