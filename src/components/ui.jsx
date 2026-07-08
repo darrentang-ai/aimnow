@@ -18,11 +18,13 @@ export function Reveal({ children, delay = 0, y = 24, className = '' }) {
 // Modern section eyebrow — an uppercase, wide-tracked cyan label with a
 // subtle gradient accent line. Intentionally not a pill, so it doesn't
 // read as a button. Flanking lines on both sides when centered.
-export function Eyebrow({ children, center = false, className = '' }) {
+export function Eyebrow({ children, center = false, size = 'sm', className = '' }) {
+  // 'lg' nudges the label up a step for the oversized hero headline; sections keep 'sm'.
+  const textSize = size === 'lg' ? 'text-sm md:text-[15px]' : 'text-xs'
   return (
     <div className={`flex items-center gap-3 ${center ? 'justify-center' : ''} ${className}`}>
       <span className="h-px w-8 bg-gradient-to-r from-transparent to-cyan-glow/70" />
-      <span className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-glow">{children}</span>
+      <span className={`${textSize} font-semibold uppercase tracking-[0.25em] text-cyan-glow`}>{children}</span>
       {center && <span className="h-px w-8 bg-gradient-to-l from-transparent to-cyan-glow/70" />}
     </div>
   )
