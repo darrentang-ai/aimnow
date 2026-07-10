@@ -12,11 +12,25 @@ const companies = [
         status: 'done',
         title: 'AI contact data-mining & enrichment',
         desc: 'An AI-powered tool that data-mines for new contacts and enriches their details via the Lusha API.',
+        review: {
+          rating: 5,
+          quote:
+            'Exceptionally happy with the service! The results exceeded my expectations—professional, efficient, and exactly what I needed. This will definitely help Astra attract new business and grow our client base. Highly recommend!',
+          author: 'Martin Kinsey',
+          role: 'Co-founder, Astra Worldwide',
+        },
       },
       {
         status: 'done',
         title: 'BDM activity Workbench',
         desc: 'A web app — “Workbench” — to track business-development manager activity end to end.',
+        review: {
+          rating: 5,
+          quote:
+            'The BDM Activity Workbench build was outstanding! The intuitive design, seamless workflow, and powerful search tools make it easy to track leads, manage pipelines, and identify new business opportunities. This will significantly boost our outreach and conversion rates. Perfect for any sales or business development team!',
+          author: 'Martin Kinsey',
+          role: 'Co-founder, Astra Worldwide',
+        },
       },
     ],
   },
@@ -33,6 +47,18 @@ const companies = [
     ],
   },
 ]
+
+function Stars({ n }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`Rated ${n} out of 5`}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <svg key={i} viewBox="0 0 24 24" className={`h-3.5 w-3.5 ${i < n ? 'text-cyan-glow' : 'text-white/15'}`} fill="currentColor">
+          <path d="m12 2 2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77 5.82 21l1.18-6.88-5-4.87 7.1-1.01L12 2Z" />
+        </svg>
+      ))}
+    </div>
+  )
+}
 
 function StatusTag({ status }) {
   const done = status === 'done'
@@ -100,6 +126,18 @@ export default function Projects() {
                         <StatusTag status={p.status} />
                       </div>
                       <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{p.desc}</p>
+                      {p.review && (
+                        <figure className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                          <Stars n={p.review.rating} />
+                          <blockquote className="mt-2 text-sm italic leading-relaxed text-slate-300">
+                            “{p.review.quote}”
+                          </blockquote>
+                          <figcaption className="mt-2.5 text-xs font-semibold text-white">
+                            {p.review.author}
+                            <span className="font-normal text-slate-400"> · {p.review.role}</span>
+                          </figcaption>
+                        </figure>
+                      )}
                     </li>
                   ))}
                 </ul>
