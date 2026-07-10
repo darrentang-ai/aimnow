@@ -20,7 +20,7 @@ const tiers = [
     price: '£49',
     note: 'per month',
     features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement', 'Save 20% billed annually (£39/mo)'],
-    cta: 'Start Pro',
+    cta: 'Start Premium plan',
     featured: true,
   },
   {
@@ -61,7 +61,7 @@ export default function Portal() {
         {/* Pricing */}
         <Reveal>
           <h3 className="mt-20 text-center font-display text-2xl font-700 text-white">
-            Simple, freemium pricing
+            Simple, freemium plan
           </h3>
         </Reveal>
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
