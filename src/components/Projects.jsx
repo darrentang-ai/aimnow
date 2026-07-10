@@ -1,0 +1,113 @@
+import { Reveal, SectionHead } from './ui'
+
+// Client logos come in different brand colours, so each sits on a light
+// "logo plate" for consistent legibility against the dark theme.
+const companies = [
+  {
+    name: 'Astra Worldwide',
+    href: 'https://astraworldwide.com/',
+    logo: '/logos/astra.webp',
+    projects: [
+      {
+        status: 'done',
+        title: 'AI contact data-mining & enrichment',
+        desc: 'An AI-powered tool that data-mines for new contacts and enriches their details via the Lusha API.',
+      },
+      {
+        status: 'done',
+        title: 'BDM activity Workbench',
+        desc: 'A web app — “Workbench” — to track business-development manager activity end to end.',
+      },
+    ],
+  },
+  {
+    name: 'Gaucin Properties',
+    href: 'https://gaucinproperties.com/en/',
+    logo: '/logos/gaucin.png',
+    projects: [
+      {
+        status: 'progress',
+        title: 'Full website rebuild',
+        desc: 'A complete rebuild of the website with a modern look and feel.',
+      },
+    ],
+  },
+]
+
+function StatusTag({ status }) {
+  const done = status === 'done'
+  return done ? (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-glow/30 bg-cyan-glow/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-cyan-glow">
+      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none">
+        <path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      Completed
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+      <span className="h-1.5 w-1.5 animate-pulseGlow rounded-full bg-amber-300" />
+      In progress
+    </span>
+  )
+}
+
+export default function Projects() {
+  return (
+    <section id="projects" className="relative py-20 md:py-28">
+      <div className="container-x">
+        <Reveal>
+          <SectionHead
+            eyebrow="Our work"
+            title="Recent projects"
+            sub="A snapshot of work we've delivered — from AI tooling to full product builds."
+          />
+        </Reveal>
+
+        <div className="mt-14 grid gap-6 md:grid-cols-2">
+          {companies.map((c, i) => (
+            <Reveal key={c.name} delay={i * 0.08}>
+              <div className="card card-hover flex h-full flex-col">
+                <div className="flex items-center justify-between gap-4">
+                  <a
+                    href={c.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-14 items-center rounded-xl bg-white px-4 transition-transform hover:scale-[1.02]"
+                    aria-label={`Visit ${c.name}`}
+                  >
+                    <img src={c.logo} alt={c.name} className="h-8 w-auto" loading="lazy" />
+                  </a>
+                  <a
+                    href={c.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
+                  >
+                    Visit site
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
+                      <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </a>
+                </div>
+
+                <h3 className="mt-5 font-display text-xl font-700 text-white">{c.name}</h3>
+
+                <ul className="mt-5 space-y-4">
+                  {c.projects.map((p) => (
+                    <li key={p.title} className="border-t border-white/10 pt-4 first:border-t-0 first:pt-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h4 className="font-display text-base font-600 text-white">{p.title}</h4>
+                        <StatusTag status={p.status} />
+                      </div>
+                      <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{p.desc}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
