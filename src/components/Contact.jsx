@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Reveal, Eyebrow } from './ui'
 
 const interests = [
-  'Join the AI Manager Portal',
   'AI Manager Portal — Free plan',
   'AI Manager Portal — Premium plan',
   'AI Manager Portal — Enterprise plan',
@@ -19,7 +18,7 @@ export default function Contact() {
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ name: '', email: '', company: '', interest: interests[0], message: '' })
+  const [form, setForm] = useState({ name: '', email: '', company: '', interest: 'General enquiry', message: '' })
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
