@@ -4,7 +4,7 @@ import { Reveal, Eyebrow } from './ui'
 const interests = [
   'Join the AI Manager Portal',
   'AI Manager Portal — Free plan',
-  'AI Manager Portal — Pro plan',
+  'AI Manager Portal — Premium plan',
   'AI Manager Portal — Enterprise plan',
   'Consultancy engagement',
   'Become a trusted AI Manager',

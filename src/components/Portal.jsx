@@ -17,12 +17,12 @@ const tiers = [
     featured: false,
   },
   {
-    name: 'Pro',
+    name: 'Premium',
     price: '£49',
     note: 'per month',
     features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement', 'Save 20% billed annually (£39/mo)'],
     cta: 'Start Premium plan',
-    interest: 'AI Manager Portal — Pro plan',
+    interest: 'AI Manager Portal — Premium plan',
     featured: true,
   },
   {
