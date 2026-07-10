@@ -10,8 +10,8 @@ const companies = [
     projects: [
       {
         status: 'done',
-        title: 'AI contact data-mining & enrichment',
-        desc: 'An AI-powered tool that data-mines for new contacts and enriches their details via the Lusha API.',
+        title: 'Contact data-mining & enrichment',
+        desc: 'An AI developed tool that data-mines for new contacts and enriches their details via the Lusha API.',
         review: {
           rating: 5,
           quote:
