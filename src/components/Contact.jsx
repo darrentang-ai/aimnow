@@ -1,7 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Reveal, Eyebrow } from './ui'
 
-const interests = ['Join the AI Manager Portal', 'Consultancy engagement', 'Become a trusted AI Manager', 'General enquiry']
+const interests = [
+  'Join the AI Manager Portal',
+  'AI Manager Portal — Free plan',
+  'AI Manager Portal — Pro plan',
+  'AI Manager Portal — Enterprise plan',
+  'Consultancy engagement',
+  'Become a trusted AI Manager',
+  'General enquiry',
+]
 
 // Web3Forms delivers submissions to the configured inbox (darren.tang@gmail.com).
 // This access key is public by design and safe to ship in client code.
@@ -14,6 +22,15 @@ export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', company: '', interest: interests[0], message: '' })
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  // Preselect the interest when a pricing plan (or other CTA) requests it.
+  useEffect(() => {
+    const onInterest = (e) => {
+      if (interests.includes(e.detail)) setForm((f) => ({ ...f, interest: e.detail }))
+    }
+    window.addEventListener('aimnow:interest', onInterest)
+    return () => window.removeEventListener('aimnow:interest', onInterest)
+  }, [])
 
   const onSubmit = async (e) => {
     e.preventDefault()

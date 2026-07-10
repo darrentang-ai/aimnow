@@ -13,6 +13,7 @@ const tiers = [
     note: 'Start exploring',
     features: ['Post one project', 'Notified when bids arrive', 'Browse AI Manager profiles', 'Community support'],
     cta: 'Create free account',
+    interest: 'AI Manager Portal — Free plan',
     featured: false,
   },
   {
@@ -21,6 +22,7 @@ const tiers = [
     note: 'per month',
     features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement', 'Save 20% billed annually (£39/mo)'],
     cta: 'Start Premium plan',
+    interest: 'AI Manager Portal — Pro plan',
     featured: true,
   },
   {
@@ -29,6 +31,7 @@ const tiers = [
     note: 'Talk to us',
     features: ['Multi-user accounts', 'API access', 'White-label reporting', 'SLA guarantee', 'Dedicated support', 'Retainer agreement'],
     cta: 'Contact sales',
+    interest: 'AI Manager Portal — Enterprise plan',
     featured: false,
   },
 ]
@@ -91,6 +94,7 @@ export default function Portal() {
                 </ul>
                 <a
                   href="#contact"
+                  onClick={() => window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: t.interest }))}
                   className={`mt-8 block w-full text-center ${t.featured ? 'btn-primary' : 'btn-ghost'}`}
                 >
                   {t.cta}
