@@ -42,7 +42,7 @@ export default function Services() {
         <Reveal>
           <SectionHead
             eyebrow="What we do"
-            title="Two divisions, one company"
+            title="Two divisions"
             sub="AIM NOW pairs senior strategy with a marketplace of builders — so the plan and the people who deliver it live under one roof."
           />
         </Reveal>
