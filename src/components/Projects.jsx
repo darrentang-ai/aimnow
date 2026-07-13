@@ -129,15 +129,15 @@ export default function Projects() {
                       <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{p.desc}</p>
                       {p.image && (
                         <figure className="mt-3 overflow-hidden rounded-xl border border-white/10">
+                          <figcaption className="border-b border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                            {p.image.label}
+                          </figcaption>
                           <img
                             src={p.image.src}
                             alt={`${p.title} — ${p.image.label}`}
                             className="block w-full"
                             loading="lazy"
                           />
-                          <figcaption className="border-t border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                            {p.image.label}
-                          </figcaption>
                         </figure>
                       )}
                       {p.review && (
