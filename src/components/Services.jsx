@@ -15,6 +15,7 @@ const divisions = [
     points: ['AI readiness & opportunity audits', 'Roadmaps with ROI modelling', 'Project or hourly engagement models', 'Vendor & tooling selection'],
     href: '#contact',
     cta: 'Book a strategy call',
+    interest: 'Consultancy engagement',
   },
   {
     tag: 'Division 02',
@@ -72,6 +73,7 @@ export default function Services() {
                 </ul>
                 <a
                   href={d.href}
+                  onClick={() => d.interest && window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: d.interest }))}
                   className={`mt-7 inline-flex items-center gap-2 text-sm font-semibold ${
                     d.featured ? 'text-cyan-glow' : 'text-white'
                   } transition-colors hover:text-cyan-glow`}
