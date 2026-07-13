@@ -35,7 +35,7 @@ const companies = [
     ],
   },
   {
-    name: 'Gaucin Properties',
+    name: 'Gaucín Properties',
     href: 'https://gaucinproperties.com/en/',
     logo: '/logos/gaucin.png',
     projects: [
