@@ -21,8 +21,8 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.05 }}
             className="mt-6 font-display text-4xl font-700 leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl"
           >
-            Turn AI from buzzword
-            <br className="hidden sm:block" /> into a real roadmap.
+            We match businesses with
+            <br className="hidden sm:block" /> trusted AI Managers.
           </motion.h1>
 
           <motion.p
