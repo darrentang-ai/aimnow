@@ -47,6 +47,18 @@ const companies = [
       },
     ],
   },
+  {
+    name: 'Netwise UK',
+    href: 'https://netwiseuk.com/',
+    logo: '/logos/netwise.png',
+    projects: [
+      {
+        status: 'progress',
+        title: 'Generative AI training',
+        desc: 'Hands-on generative AI training to help the team apply AI tools to their day-to-day workflow.',
+      },
+    ],
+  },
 ]
 
 function Stars({ n }) {
