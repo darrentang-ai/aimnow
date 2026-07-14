@@ -32,7 +32,7 @@ export default function Hero() {
             className="mx-auto mt-6 max-w-4xl text-base leading-relaxed text-slate-300 sm:text-lg"
           >
             AIM NOW empowers small and medium-sized businesses to navigate the AI landscape with
-            confidence. We blend strategic insight with access to a network of expert generative AI professionals.
+            confidence. We blend strategic insight with access to a network of generative AI professionals.
           </motion.p>
 
           <motion.div
