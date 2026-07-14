@@ -2,7 +2,7 @@ import { Reveal, Eyebrow } from './ui'
 
 const values = [
   { title: 'Reputation first', desc: 'We build from reputation — every AI Manager is trusted and ranked on real delivery.' },
-  { title: 'Roadmap, not hype', desc: 'Strategy grounded in ROI, not the latest buzzword cycle.' },
+  { title: 'Roadmap, not hype', desc: 'A practical roadmap driven by ROI.' },
   { title: 'Global by default', desc: 'Teams and clients across UK, Europe, North America, ANZ and APAC.' },
 ]
 
@@ -17,9 +17,9 @@ export default function About() {
               An AI strategy consultancy built to <span className="text-gradient">deliver</span>, not just advise.
             </h2>
             <p className="mt-5 text-base leading-relaxed text-slate-400">
-              AIM NOW serves SMEs and enterprise clients across five regions. We help clients turn AI from
-              buzzword into roadmap — then we build from reputation, pairing senior strategy with a marketplace
-              of trusted AI Managers.
+            AIM NOW empowers small and medium-sized businesses worldwide.
+            We transform AI from a buzzword into a clear roadmap, then bring it to life
+            by combining senior-level strategy with a network of trusted AI Managers.
             </p>
             <div className="mt-8 space-y-4">
               {values.map((v) => (

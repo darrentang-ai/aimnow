@@ -22,7 +22,7 @@ export default function Hero() {
             className="mt-6 font-display text-4xl font-700 leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl"
           >
             We match businesses with
-            <br className="hidden sm:block" /> trusted AI Managers.
+            <br className="hidden sm:block" /> trusted AI Managers
           </motion.h1>
 
           <motion.p
@@ -32,7 +32,7 @@ export default function Hero() {
             className="mx-auto mt-6 max-w-4xl text-base leading-relaxed text-slate-300 sm:text-lg"
           >
             AIM NOW empowers small and medium-sized businesses to navigate the AI landscape with
-            confidence. We combine strategic expertise with access to a marketplace of AI managers.
+            confidence. We blend strategic insight with access to a network of expert generative AI professionals.
           </motion.p>
 
           <motion.div
