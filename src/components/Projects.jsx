@@ -98,7 +98,7 @@ export default function Projects() {
           <SectionHead
             eyebrow="Our work"
             title="Recent projects"
-            sub="A snapshot of work we've delivered — from AI tooling to full product builds."
+            sub="A snapshot of our work — from AI tooling to full product builds."
           />
         </Reveal>
 

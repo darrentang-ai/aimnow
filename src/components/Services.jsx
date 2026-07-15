@@ -32,7 +32,7 @@ const divisions = [
 const offerings = [
   { icon: 'M1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2ZM8 2v16M16 6v16', title: 'Strategy & Roadmaps', desc: 'Translate ambition into a structured, actionable plan.' },
   { icon: 'M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM21 21l-4.35-4.35', title: 'Use-case Discovery', desc: 'Identify the AI solutions that truly impact your metrics.' },
-  { icon: 'M16 18l6-6-6-6M8 6l-6 6 6 6', title: 'Implementation', desc: 'Trusted AI Managers build and ship through the Portal.' },
+  { icon: 'M16 18l6-6-6-6M8 6l-6 6 6 6', title: 'Implementation', desc: 'Trusted AI Managers that build and deliver.' },
   { icon: 'M3 3v18h18M7 16l4-4 3 3 5-6', title: 'Measurement', desc: 'ROI tracking so value is provable, not promised.' },
 ]
 
