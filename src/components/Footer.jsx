@@ -2,7 +2,14 @@ import Logo from './Logo'
 
 const groups = [
   { title: 'Company', links: [['About', '#about'], ['Projects', '#projects'], ['Contact', '#contact']] },
-  { title: 'Services', links: [['Consultancy', '#services'], ['AI Manager Portal', '#portal'], ['Become an AI Manager', '#contact']] },
+  {
+    title: 'Services',
+    links: [
+      ['Consultancy', '#services'],
+      ['AI Manager Portal', '#portal'],
+      ['Become an AI Manager', '#contact', 'Become a trusted AI Manager'],
+    ],
+  },
 ]
 
 export default function Footer() {
@@ -25,9 +32,13 @@ export default function Footer() {
             <div key={g.title}>
               <h4 className="font-display text-sm font-600 text-white">{g.title}</h4>
               <ul className="mt-4 space-y-2.5">
-                {g.links.map(([label, href]) => (
+                {g.links.map(([label, href, interest]) => (
                   <li key={label}>
-                    <a href={href} className="text-sm text-slate-400 transition-colors hover:text-cyan-glow">
+                    <a
+                      href={href}
+                      onClick={interest ? () => window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: interest })) : undefined}
+                      className="text-sm text-slate-400 transition-colors hover:text-cyan-glow"
+                    >
                       {label}
                     </a>
                   </li>

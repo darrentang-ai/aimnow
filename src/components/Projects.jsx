@@ -55,7 +55,7 @@ const companies = [
       {
         status: 'progress',
         title: 'Generative AI training',
-        desc: 'Hands-on generative AI training to help the team apply AI tools to their day-to-day workflow.',
+        desc: 'Hands-on Generative AI training to help the team apply AI tools to their day-to-day workflow.',
       },
     ],
   },
