@@ -4,11 +4,11 @@ import { Reveal, SectionHead } from './ui'
 const faqs = [
   {
     q: 'What is Generative AI?',
-    a: 'Generative AI is a class of artificial intelligence that creates new content — text, images, code, analysis, and more — from natural-language prompts. Tools like large language models learn patterns from vast datasets, then apply them to draft documents, answer questions, automate workflows, and surface insights. For businesses, it means work that once took hours can be scoped, generated, and refined in minutes.',
+    a: 'Generative AI is a class of artificial intelligence that creates new content — text, images, code, analysis, and more — from natural-language prompts. Tools like large language models learn patterns from vast datasets, then apply them to draft documents, answer questions and automate workflows. For businesses, it means that hours of work can be reduced to minutes.',
   },
   {
     q: 'How can AIM NOW help my business adopt AI?',
-    a: 'We start with a discovery call and an AI readiness audit to find the opportunities that actually move your numbers — not hype. From there we build a sequenced, ROI-driven roadmap and pair you with a trusted AI Manager from our network to deliver it, so strategy and execution live under one roof.',
+    a: 'We start with a discovery call and an AI readiness audit to find the opportunities that make sense for your business. From there we build a structured, ROI-driven roadmap and pair you with a trusted AI Manager from our network to deliver it, so strategy and execution live under one roof.',
   },
   {
     q: 'Do you build custom tools, or just advise?',
@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: 'Will I be locked into an AI platform?',
-    a: 'No. We develop tools that your business owns outright, with no ongoing AI platform dependency once delivered. The goal is to leave you with capabilities that keep paying off long after the engagement ends.',
+    a: 'No. We develop tools that your business owns outright, with no ongoing AI platform dependency and costs once delivered.',
   },
 ]
 

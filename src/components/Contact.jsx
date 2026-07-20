@@ -80,7 +80,6 @@ export default function Contact() {
                 </h2>
                 <p className="mt-4 max-w-md text-base leading-relaxed text-slate-400">
                   Create a free Portal account, scope a consultancy engagement, or just ask a question.
-                  We typically reply within one business day.
                 </p>
               </Reveal>
             </div>
@@ -96,7 +95,7 @@ export default function Contact() {
                   </div>
                   <h3 className="mt-5 font-display text-xl font-700 text-white">Thanks, {form.name || 'there'}!</h3>
                   <p className="mt-2 max-w-sm text-sm text-slate-400">
-                    Your message is in. We'll be in touch within one business day.
+                    Your message is in. We'll be in touch soon.
                   </p>
                   <button onClick={() => setSent(false)} className="btn-ghost mt-6">
                     Send another
