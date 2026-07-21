@@ -8,7 +8,7 @@ const faqs = [
   },
   {
     q: 'How can AIM NOW help my business adopt AI?',
-    a: 'We start with a discovery call and an AI readiness audit to find the opportunities that make sense for your business. From there we build a structured, ROI-driven roadmap and pair you with a trusted AI Manager from our network to deliver it, so strategy and execution live under one roof.',
+    a: 'We start with a discovery call and an AI readiness audit to find the opportunities that make sense for your business. From there we build a structured, ROI-driven roadmap and pair you with a trusted AI Manager from our network to deliver it.',
   },
   {
     q: 'Do you build custom tools, or just advise?',

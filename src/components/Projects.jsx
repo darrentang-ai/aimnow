@@ -11,7 +11,7 @@ const companies = [
       {
         status: 'done',
         title: 'Contact data-mining & enrichment',
-        desc: 'An AI developed tool that data-mines for new contacts and enriches their details via the Lusha API.',
+        desc: 'An AI developed tool that data-mines for new contacts and enriches their details.',
         review: {
           rating: 5,
           quote:

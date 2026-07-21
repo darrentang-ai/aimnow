@@ -9,18 +9,18 @@ const steps = [
 const tiers = [
   {
     name: 'Free',
-    price: '£0',
+    price: '€0',
     note: 'Start exploring',
-    features: ['Discovery call', 'View all projects', 'Post one project', 'Notified when bids arrive', 'Community support'],
+    features: ['Discovery call', 'View projects', 'Post one project', 'Notified when bids arrive', 'Community support'],
     cta: 'Create free account',
     interest: 'AI Manager Portal — Free plan',
     featured: false,
   },
   {
     name: 'Premium',
-    price: '£49',
+    price: '€49',
     note: 'per month',
-    features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement', 'Save 20% billed annually (£39/mo)'],
+    features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement', 'Save 20% billed annually (€39/month)'],
     cta: 'Start Premium plan',
     interest: 'AI Manager Portal — Premium plan',
     featured: true,
@@ -44,7 +44,7 @@ export default function Portal() {
           <SectionHead
             eyebrow="The AI Manager Portal"
             title="Your marketplace of trusted AI Managers"
-            sub="A freemium platform that connects businesses with the right builders — and gives you the tools to manage delivery end to end."
+            sub="A freemium platform that connects businesses with the right builders."
           />
         </Reveal>
 
