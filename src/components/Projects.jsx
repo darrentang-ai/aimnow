@@ -11,7 +11,7 @@ const companies = [
       {
         status: 'done',
         title: 'Contact data-mining & enrichment',
-        desc: 'An AI developed tool that data-mines for new contacts and enriches their details.',
+        desc: 'An AI developed tool that extracts new contacts and enriches their details.',
         review: {
           rating: 5,
           quote:
@@ -23,7 +23,7 @@ const companies = [
       {
         status: 'done',
         title: 'BDM activity Workbench',
-        desc: 'A web app — “Workbench” — to track business-development manager activity end to end.',
+        desc: 'A web application to track Business Development Manager activity end to end.',
         review: {
           rating: 5,
           quote:
@@ -98,7 +98,7 @@ export default function Projects() {
           <SectionHead
             eyebrow="Our work"
             title="Recent projects"
-            sub="A snapshot of our work — from AI tooling to full product builds."
+            sub="A snapshot of our work — from AI developed tools to full product builds."
           />
         </Reveal>
 
