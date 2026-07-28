@@ -10,7 +10,7 @@ const interests = [
   'General enquiry',
 ]
 
-// Web3Forms delivers submissions to the configured inbox (darren.tang@gmail.com).
+// Web3Forms delivers submissions to the configured inbox (hello@aimnow.io).
 // This access key is public by design and safe to ship in client code.
 const WEB3FORMS_ACCESS_KEY = '8e889530-28a3-4589-ad7b-d5957f298073'
 
