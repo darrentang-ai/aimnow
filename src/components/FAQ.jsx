@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     q: 'Do you build custom tools, or just advise?',
-    a: 'Both. Beyond strategy, our AI Managers design and ship practical tools tailored to your workflow — from data-mining and enrichment engines to internal web apps. You get working software that fits how your team actually operates, not a generic off-the-shelf product.',
+    a: 'Both. Beyond strategy, our AI Managers design and ship practical tools tailored to your workflow — from data extraction and enrichment engines to internal web apps. You get working software that fits how your team actually operates, not a generic off-the-shelf product.',
   },
   {
     q: 'Will I be locked into an AI platform?',

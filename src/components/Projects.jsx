@@ -10,7 +10,7 @@ const companies = [
     projects: [
       {
         status: 'done',
-        title: 'Contact extraction & enrichment',
+        title: 'Data extraction & enrichment tool',
         desc: 'An AI developed tool that extracts new contacts and enriches their details.',
         review: {
           rating: 5,
