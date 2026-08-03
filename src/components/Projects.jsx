@@ -53,9 +53,21 @@ const companies = [
     logo: '/logos/netwise.png',
     projects: [
       {
-        status: 'progress',
+        status: 'done',
         title: 'Generative AI training',
         desc: 'Hands-on Generative AI training to help the team apply AI tools to their day-to-day workflow.',
+        review: {
+          rating: 5,
+          // Longer testimonial — quote takes an array, one entry per paragraph.
+          quote: [
+            'Darren Tang at Aim Now gave us something more valuable than advice — he gave us capability.',
+            'Before our session, anything involving custom development at NetWise meant either paying a developer or settling for off-the-shelf plugins and themes that never quite fitted. After it, we’ve rebuilt our core WordPress theme, built our own plugins, and streamlined workflows and marketing — all in-house, all in a few weeks.',
+            'For a business our size, that’s a meaningful change to our cost base and our ability to deliver for clients. Darren was straight-talking, clearly knew his stuff, and tailored everything to how our business actually operates rather than giving us a generic AI pitch.',
+            'Worth every penny. If you’re an SME owner wondering whether AI consultancy is worth the time, it is — provided you get the right consultant.',
+          ],
+          author: 'Adam',
+          role: 'Director, NetWise UK',
+        },
       },
     ],
   },
@@ -70,6 +82,23 @@ function Stars({ n }) {
         </svg>
       ))}
     </div>
+  )
+}
+
+// Testimonial body. `text` is a plain string, or an array of paragraphs —
+// opening quote mark goes on the first, closing on the last.
+function Quote({ text }) {
+  const paras = Array.isArray(text) ? text : [text]
+  return (
+    <blockquote className="mt-2 text-sm italic leading-relaxed text-slate-300">
+      {paras.map((para, i) => (
+        <p key={i} className={i > 0 ? 'mt-2.5' : ''}>
+          {i === 0 && '“'}
+          {para}
+          {i === paras.length - 1 && '”'}
+        </p>
+      ))}
+    </blockquote>
   )
 }
 
@@ -155,9 +184,7 @@ export default function Projects() {
                       {p.review && (
                         <figure className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
                           <Stars n={p.review.rating} />
-                          <blockquote className="mt-2 text-sm italic leading-relaxed text-slate-300">
-                            “{p.review.quote}”
-                          </blockquote>
+                          <Quote text={p.review.quote} />
                           <figcaption className="mt-2.5 text-xs font-semibold text-white">
                             {p.review.author}
                             <span className="font-normal text-slate-400"> · {p.review.role}</span>
