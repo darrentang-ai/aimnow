@@ -198,6 +198,22 @@ export default function Projects() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={companies.length * 0.08}>
+          <div className="mt-10 text-center">
+            <a
+              href="https://g.page/r/CROM9LxmlKzNEBM/review"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
+            >
+              Leave us a Google review
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
+                <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </a>
+          </div>
+        </Reveal>
       </div>
     </section>
   )
