@@ -6,6 +6,7 @@ import Portal from './components/Portal'
 import About from './components/About'
 import Projects from './components/Projects'
 import FAQ from './components/FAQ'
+import DiscoveryCTA from './components/DiscoveryCTA'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 
@@ -47,6 +48,7 @@ export default function App() {
         <About />
         <Projects />
         <FAQ />
+        <DiscoveryCTA />
         <Contact />
       </main>
       <Footer />

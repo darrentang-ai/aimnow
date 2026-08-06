@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Reveal, Eyebrow } from './ui'
 
 const interests = [
+  'Free 30-min AI discovery call',
   'AI Manager Portal — Free plan',
   'AI Manager Portal — Premium plan',
   'AI Manager Portal — Enterprise plan',
