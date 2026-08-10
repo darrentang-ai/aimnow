@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     q: 'How does the AI Manager Portal work?',
-    a: 'Post a project with us and we’ll match you with an AI Manager to build it with you. A free account lets you describe your business and the outcome you need, then we surface trusted AI Managers from our network — ranked on real delivery — and notify you as bids arrive. Once you’ve picked the right person, you track milestones, comms and outcomes from one place while they build it alongside you.',
+    a: 'Post a project with us and we’ll match you with an AI Manager to build it with you. A free account lets you describe your business and the outcome you need, then we surface trusted AI Managers from our network (ranked on real delivery) and notify you as bids arrive. Once you’ve picked the right person, you track milestones, comms and outcomes from one place while they build it alongside you.',
   },
   {
     q: 'Do you build custom tools, or just advise?',
