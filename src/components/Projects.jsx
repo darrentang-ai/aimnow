@@ -15,7 +15,7 @@ const companies = [
         review: {
           rating: 5,
           quote:
-            'Exceptionally happy with the service! The results exceeded my expectations—professional, efficient, and exactly what I needed. This will definitely help Astra attract new business and grow our client base. Highly recommend!',
+            'Exceptionally happy with the service! The results exceeded my expectations. AIM NOW were professional, efficient, and exactly what I needed. This will definitely help Astra attract new business and grow our client base. Highly recommend!',
           author: 'Martin Kinsey',
           role: 'Co-founder, Astra Worldwide',
         },
