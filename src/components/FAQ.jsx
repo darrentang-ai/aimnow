@@ -11,6 +11,10 @@ const faqs = [
     a: 'We start with a discovery call and an AI readiness audit to find the opportunities that make sense for your business. From there we build a structured, ROI-driven roadmap and pair you with a trusted AI Manager from our network to deliver it.',
   },
   {
+    q: 'How does the AI Manager Portal work?',
+    a: 'Post a project with us and we’ll match you with an AI Manager to build it with you. A free account lets you describe your business and the outcome you need, then we surface trusted AI Managers from our network — ranked on real delivery — and notify you as bids arrive. Once you’ve picked the right person, you track milestones, comms and outcomes from one place while they build it alongside you.',
+  },
+  {
     q: 'Do you build custom tools, or just advise?',
     a: 'Both. Beyond strategy, our AI Managers design and ship practical tools tailored to your workflow — from data extraction and enrichment engines to internal web apps. You get working software that fits how your team actually operates, not a generic off-the-shelf product.',
   },
