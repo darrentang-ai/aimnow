@@ -31,7 +31,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.12 }}
             className="mx-auto mt-6 max-w-4xl text-base leading-relaxed text-slate-300 sm:text-lg"
           >
-            AIM NOW empowers small and medium-sized businesses to navigate the AI landscape with
+            AIM Now empowers small and medium-sized businesses to navigate the AI landscape with
             confidence. We blend strategic insight with access to a network of Generative AI specialists, developing your own tools to help your business - with no ongoing AI platform dependency and costs once delivered.
           </motion.p>
 
