@@ -60,10 +60,10 @@ const companies = [
           rating: 5,
           // Longer testimonial — quote takes an array, one entry per paragraph.
           quote: [
-            'Darren Tang at AIM Now gave us something more valuable than advice — he gave us capability.',
+            'Darren Tang at AIM Now gave us something more valuable than advice – he gave us capability.',
             'Before our session, anything involving custom development at NetWise meant either paying a developer or settling for off-the-shelf plugins and themes that never quite fitted. After it, we’ve rebuilt our core WordPress theme, built our own plugins, and streamlined workflows and marketing',
             'For a business our size, that’s a meaningful change to our cost base and our ability to deliver for clients. Darren was straight-talking, clearly knew his stuff, and tailored everything to how our business actually operates rather than giving us a generic AI pitch.',
-            'Worth every penny. If you’re an SME owner wondering whether AI consultancy is worth the time, it is — provided you get the right consultant.',
+            'Worth every penny. If you’re an SME owner wondering whether AI consultancy is worth the time, it is – provided you get the right consultant.',
           ],
           author: 'Adam',
           role: 'Director, NetWise UK',
