@@ -3,7 +3,7 @@ import { Reveal, SectionHead } from './ui'
 const steps = [
   { n: '01', title: 'Create a free account', desc: 'Freemium access — describe your business and the outcome you need.' },
   { n: '02', title: 'Get matched', desc: 'We surface trusted, reputation-ranked AI Managers scoped to your roadmap.' },
-  { n: '03', title: 'Manage delivery', desc: 'Track milestones, comms, and outcomes from a single managed portal.' },
+  { n: '03', title: 'Monitor delivery', desc: 'Track milestones, comms, and outcomes from a single managed portal.' },
 ]
 
 const tiers = [
