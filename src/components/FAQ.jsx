@@ -7,7 +7,7 @@ const faqs = [
     a: 'Generative AI is a class of artificial intelligence that creates new content — text, images, code, analysis, and more — from natural-language prompts. Tools like large language models learn patterns from vast datasets, then apply them to draft documents, answer questions and automate workflows. For businesses, it means that hours of work can be reduced to minutes.',
   },
   {
-    q: 'How can AIM NOW help my business adopt AI?',
+    q: 'How can AIM Now help my business adopt AI?',
     a: 'We start with a discovery call and an AI readiness audit to find the opportunities that make sense for your business. From there we build a structured, ROI-driven roadmap and pair you with a trusted AI Manager from our network to deliver it.',
   },
   {
@@ -64,7 +64,7 @@ export default function FAQ() {
           <SectionHead
             eyebrow="FAQ"
             title="Generative AI, answered"
-            sub="What Generative AI is — and how AIM NOW turns it into practical value for your business."
+            sub="What Generative AI is — and how AIM Now turns it into practical value for your business."
           />
         </Reveal>
 

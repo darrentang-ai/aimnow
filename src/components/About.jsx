@@ -17,7 +17,7 @@ export default function About() {
               An AI strategy consultancy built to <span className="text-gradient">deliver</span>, not just advise.
             </h2>
             <p className="mt-5 text-base leading-relaxed text-slate-400">
-            AIM NOW empowers small and medium-sized businesses worldwide.
+            AIM Now empowers small and medium-sized businesses worldwide.
             We transform AI from a buzzword into a clear roadmap, then bring it to life
             by combining senior-level strategy with a network of trusted AI Managers.
             </p>
