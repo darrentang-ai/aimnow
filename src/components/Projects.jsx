@@ -36,14 +36,14 @@ const companies = [
   },
   {
     name: 'Gaucín Properties',
-    href: 'https://gaucinproperties.com/en/',
+    href: 'https://gaucinproperties.com/',
     logo: '/logos/gaucin.png',
     projects: [
       {
-        status: 'progress',
+        status: 'done',
         title: 'Full website rebuild',
         desc: 'A complete rebuild of the website with a modern look and feel.',
-        image: { src: '/projects/gaucin-current.webp', label: 'Current site' },
+        image: { src: '/projects/gaucin-current.webp', label: 'Before' },
       },
     ],
   },
