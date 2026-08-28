@@ -42,7 +42,7 @@ const companies = [
       {
         status: 'done',
         title: 'Full website rebuild',
-        desc: 'A complete rebuild of the website with a modern look and feel.',
+        desc: 'A complete rebuild of the website with a modern look and feel, including a custom WordPress plugin built with Claude to showcase properties with search filters, bookmarking, and sharing.',
         image: { src: '/projects/gaucin-current.webp', label: 'Before' },
       },
     ],
