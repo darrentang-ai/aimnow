@@ -50,7 +50,7 @@ const companies = [
           rating: 5,
           quote:
             'We have been absolutely delighted with the work Darren and Christian at AIM NOW have done for us.',
-          author: 'Donald Black',
+          author: 'Donald J. Black',
           role: 'Sales & Marketing Director, Gaucín Properties',
           href: 'https://maps.app.goo.gl/ZotHBNWRR9DGB56e8',
         },
