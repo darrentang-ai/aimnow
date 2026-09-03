@@ -44,10 +44,14 @@ const companies = [
         title: 'Full website rebuild',
         desc: 'A complete rebuild of the website with a modern look and feel, including a custom WordPress plugin built with Claude to showcase properties with search filters, bookmarking, and sharing.',
         image: { src: '/projects/gaucin-current.webp', label: 'Before' },
-        // Rating plus a link out, rather than a written testimonial — quote and
-        // author are optional, so only the stars and the link render.
+        // Teaser excerpt from the Google review — the full text lives at `href`.
+        // Quoted verbatim, so "AIM NOW" keeps the reviewer's own capitalisation.
         review: {
           rating: 5,
+          quote:
+            'We have been absolutely delighted with the work Darren and Christian at AIM NOW have done for us.',
+          author: 'Donald Black',
+          role: 'Sales & Marketing Director, Gaucín Properties',
           href: 'https://maps.app.goo.gl/ZotHBNWRR9DGB56e8',
         },
       },
