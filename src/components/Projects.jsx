@@ -44,6 +44,12 @@ const companies = [
         title: 'Full website rebuild',
         desc: 'A complete rebuild of the website with a modern look and feel, including a custom WordPress plugin built with Claude to showcase properties with search filters, bookmarking, and sharing.',
         image: { src: '/projects/gaucin-current.webp', label: 'Before' },
+        // Rating plus a link out, rather than a written testimonial — quote and
+        // author are optional, so only the stars and the link render.
+        review: {
+          rating: 5,
+          href: 'https://maps.app.goo.gl/ZotHBNWRR9DGB56e8',
+        },
       },
     ],
   },
@@ -168,6 +174,33 @@ export default function Projects() {
                         <StatusTag status={p.status} />
                       </div>
                       <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{p.desc}</p>
+                      {/* Review sits above any screenshot so the rating isn't
+                          buried below a tall image. */}
+                      {p.review && (
+                        <figure className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                          <Stars n={p.review.rating} />
+                          {p.review.quote && <Quote text={p.review.quote} />}
+                          {p.review.author && (
+                            <figcaption className="mt-2.5 text-xs font-semibold text-white">
+                              {p.review.author}
+                              <span className="font-normal text-slate-400"> · {p.review.role}</span>
+                            </figcaption>
+                          )}
+                          {p.review.href && (
+                            <a
+                              href={p.review.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
+                            >
+                              Read the Google review
+                              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
+                                <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </a>
+                          )}
+                        </figure>
+                      )}
                       {p.image && (
                         <figure className="mt-3 overflow-hidden rounded-xl border border-white/10">
                           <figcaption className="border-b border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
@@ -179,16 +212,6 @@ export default function Projects() {
                             className="block w-full"
                             loading="lazy"
                           />
-                        </figure>
-                      )}
-                      {p.review && (
-                        <figure className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                          <Stars n={p.review.rating} />
-                          <Quote text={p.review.quote} />
-                          <figcaption className="mt-2.5 text-xs font-semibold text-white">
-                            {p.review.author}
-                            <span className="font-normal text-slate-400"> · {p.review.role}</span>
-                          </figcaption>
                         </figure>
                       )}
                     </li>
