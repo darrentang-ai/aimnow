@@ -1,4 +1,5 @@
 import { Reveal, SectionHead } from './ui'
+import { DISCOVERY_INTEREST } from './DiscoveryCTA'
 
 // Client logos come in different brand colours, so each sits on a light
 // "logo plate" for consistent legibility against the dark theme.
@@ -134,10 +135,12 @@ export default function Projects() {
     <section id="projects" className="relative py-20 md:py-28">
       <div className="container-x">
         <Reveal>
+          {/* Counts below are hand-kept: 4 reviews across 3 companies in
+              `companies` above. Update the sub if projects are added. */}
           <SectionHead
             eyebrow="Our work"
             title="Recent projects"
-            sub="A snapshot of our work — from AI developed tools to full product builds."
+            sub="Four five-star reviews across three businesses — custom tools and rebuilds they own outright."
           />
         </Reveal>
 
@@ -226,19 +229,35 @@ export default function Projects() {
           ))}
         </div>
 
+        {/* Peak-trust moment: prospects have just read the reviews, so the
+            primary action is the discovery call. The Google review link stays
+            but is demoted — it addresses past clients, not buyers. */}
         <Reveal delay={companies.length * 0.08}>
-          <div className="mt-10 text-center">
+          <div className="mt-12 text-center">
+            <p className="text-base text-slate-300">Want something like this for your business?</p>
             <a
-              href="https://g.page/r/CROM9LxmlKzNEBM/review"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
+              href="#contact"
+              onClick={() => window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: DISCOVERY_INTEREST }))}
+              className="btn-primary mt-5"
             >
-              Leave us a Google review
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
-                <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              Book your free 30-minute call
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </a>
+            <div className="mt-6">
+              <a
+                href="https://g.page/r/CROM9LxmlKzNEBM/review"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-cyan-glow"
+              >
+                Already worked with us? Leave a Google review
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
+                  <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+            </div>
           </div>
         </Reveal>
       </div>

@@ -51,6 +51,27 @@ export default function Hero() {
               Explore Consultancy
             </a>
           </motion.div>
+
+          {/* Above-the-fold proof, and the only pull toward #projects before
+              three other sections. Update the client names if the work changes. */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.24 }}
+            className="mt-8 text-sm text-slate-400"
+          >
+            Astra Worldwide · Gaucín Properties · NetWise UK —{' '}
+            <span className="text-cyan-glow">★★★★★</span> on every project.{' '}
+            <a
+              href="#projects"
+              className="inline-flex items-center gap-1 font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
+            >
+              See the work
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
+                <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </a>
+          </motion.p>
         </div>
       </div>
     </section>

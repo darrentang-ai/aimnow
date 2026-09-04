@@ -41,10 +41,24 @@ export default function Services() {
     <section id="services" className="relative py-20 md:py-28">
       <div className="container-x">
         <Reveal>
+          {/* `sub` renders as a node, so it can carry an inline link. This is
+              the earliest pull toward #projects after the hero. */}
           <SectionHead
             eyebrow="What we do"
             title="Two divisions"
-            sub="AIM Now pairs senior strategy with a marketplace of builders — so the plan and the people who deliver it live under one roof."
+            sub={
+              <>
+                AIM Now pairs senior strategy with a marketplace of builders — so the plan and the
+                people who deliver it live under one roof.{' '}
+                <a
+                  href="#projects"
+                  className="font-semibold text-slate-300 underline decoration-slate-600 underline-offset-4 transition-colors hover:text-cyan-glow hover:decoration-cyan-glow"
+                >
+                  See recent work
+                </a>
+                .
+              </>
+            }
           />
         </Reveal>
 
