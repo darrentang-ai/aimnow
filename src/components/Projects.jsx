@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react'
 import { Reveal, SectionHead } from './ui'
 import { DISCOVERY_INTEREST } from './DiscoveryCTA'
+import { trackProjectsView, trackProjectsCtaClick } from '../lib/analytics'
 
 // Client logos come in different brand colours, so each sits on a light
 // "logo plate" for consistent legibility against the dark theme.
@@ -131,8 +133,27 @@ function StatusTag({ status }) {
 }
 
 export default function Projects() {
+  const sectionRef = useRef(null)
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return
+        trackProjectsView()
+        io.disconnect() // Once per page load, not once per scroll past.
+      },
+      // Require the section to clear the bottom fifth of the viewport, so a
+      // brief peek at the very edge doesn't count as having reached it.
+      { rootMargin: '0px 0px -20% 0px' }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
   return (
-    <section id="projects" className="relative py-20 md:py-28">
+    <section ref={sectionRef} id="projects" className="relative py-20 md:py-28">
       <div className="container-x">
         <Reveal>
           {/* Counts below are hand-kept: 4 reviews across 3 companies in
@@ -237,7 +258,10 @@ export default function Projects() {
             <p className="text-base text-slate-300">Want something like this for your business?</p>
             <a
               href="#contact"
-              onClick={() => window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: DISCOVERY_INTEREST }))}
+              onClick={() => {
+                trackProjectsCtaClick()
+                window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: DISCOVERY_INTEREST }))
+              }}
               className="btn-primary mt-5"
             >
               Book your free 30-minute call

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Reveal, Eyebrow } from './ui'
+import { trackLead } from '../lib/analytics'
 
 const interests = [
   'Free 30-min AI discovery call',
@@ -56,6 +57,9 @@ export default function Contact() {
       })
       const data = await res.json()
       if (data.success) {
+        // Only on a confirmed success — the form posts via fetch with no page
+        // navigation, so nothing else would record the conversion.
+        trackLead(form.interest)
         setSent(true)
       } else {
         setError(data.message || 'Something went wrong. Please try again.')
