@@ -1,4 +1,5 @@
 import { Reveal, SectionHead } from './ui'
+import { trackFreeAccountClick } from '../lib/analytics'
 
 const steps = [
   { n: '01', title: 'Create a free account', desc: 'Freemium access — describe your business and the outcome you need.' },
@@ -94,7 +95,13 @@ export default function Portal() {
                 </ul>
                 <a
                   href="#contact"
-                  onClick={() => window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: t.interest }))}
+                  onClick={() => {
+                    // Free is the Portal's top of funnel, so its CTA is measured
+                    // on its own. Keyed to the tier name — rename it and this
+                    // stops firing.
+                    if (t.name === 'Free') trackFreeAccountClick()
+                    window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: t.interest }))
+                  }}
                   className={`mt-8 block w-full text-center ${t.featured ? 'btn-primary' : 'btn-ghost'}`}
                 >
                   {t.cta}
