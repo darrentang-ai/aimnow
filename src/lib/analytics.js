@@ -22,12 +22,15 @@ export function trackProjectsCtaClick() {
   send('projects_cta_click')
 }
 
-// Intent, not completion — the CTA leads to the contact form, so the booking
-// itself is still recorded by `generate_lead` below. Deliberately not named
-// `sign_up`, which would imply an account was actually created.
-export function trackFreeAccountClick() {
-  lastCta = 'portal_free'
-  send('portal_free_account_click')
+// Portal plan CTAs. One event name per plan, so each gets its own row in GA4's
+// Events report without needing a custom dimension registered.
+//
+// Intent, not completion — every plan CTA routes to the contact form, so the
+// enquiry itself is still recorded by `generate_lead` below. Deliberately not
+// `sign_up` or `purchase`, which would imply the plan was actually taken up.
+export function trackPlanClick(plan) {
+  lastCta = `portal_${plan}`
+  send(`portal_${plan}_plan_click`)
 }
 
 // `generate_lead` is a GA4 recommended event name, so it drops into conversion

@@ -1,5 +1,5 @@
 import { Reveal, SectionHead } from './ui'
-import { trackFreeAccountClick } from '../lib/analytics'
+import { trackPlanClick } from '../lib/analytics'
 
 const steps = [
   { n: '01', title: 'Create a free account', desc: 'Freemium access — describe your business and the outcome you need.' },
@@ -15,6 +15,7 @@ const tiers = [
     features: ['Discovery call', 'View projects', 'Post one project', 'Notified when bids arrive', 'Community support'],
     cta: 'Create free account',
     interest: 'AI Manager Portal — Free plan',
+    plan: 'free', // Tracked — see trackPlanClick.
     featured: false,
   },
   {
@@ -24,6 +25,7 @@ const tiers = [
     features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement', 'Save 20% billed annually (€39/month)'],
     cta: 'Start Premium plan',
     interest: 'AI Manager Portal — Premium plan',
+    plan: 'premium', // Tracked — see trackPlanClick.
     featured: true,
   },
   {
@@ -96,10 +98,9 @@ export default function Portal() {
                 <a
                   href="#contact"
                   onClick={() => {
-                    // Free is the Portal's top of funnel, so its CTA is measured
-                    // on its own. Keyed to the tier name — rename it and this
-                    // stops firing.
-                    if (t.name === 'Free') trackFreeAccountClick()
+                    // Only tiers carrying a `plan` are measured; add one to
+                    // Enterprise if it needs tracking too.
+                    if (t.plan) trackPlanClick(t.plan)
                     window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: t.interest }))
                   }}
                   className={`mt-8 block w-full text-center ${t.featured ? 'btn-primary' : 'btn-ghost'}`}
