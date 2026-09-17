@@ -1,0 +1,4 @@
+# SPA rewrite. The site now has real client-side routes (/portal), so a direct
+# visit or refresh there must be served index.html instead of 404ing. Netlify
+# still serves any matching static file first, so assets are unaffected.
+/*  /index.html  200

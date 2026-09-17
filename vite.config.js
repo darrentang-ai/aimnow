@@ -33,6 +33,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // The site has client-side routes now, so the service worker must
+        // answer a navigation to /portal with the app shell.
+        navigateFallback: 'index.html',
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === 'image',
