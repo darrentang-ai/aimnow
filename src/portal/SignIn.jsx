@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { canInstall, promptInstall } from '../lib/pwaInstall'
 import { Alert, Field } from './ui'
 
 // Local-only escape hatch. Supabase's built-in mailer allows a handful of
@@ -74,6 +75,7 @@ export default function SignIn() {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [installOffered, setInstallOffered] = useState(false)
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -106,7 +108,30 @@ export default function SignIn() {
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
             We sent a sign-in link to <span className="text-slate-200">{email}</span>. It expires after an hour.
           </p>
-          <button onClick={() => setSent(false)} className="btn-ghost mt-6 !py-2.5 !text-xs">
+
+          {/* Best moment to offer the install: they have committed an email,
+              and this screen is dead time while they switch to their mail app.
+              An explicit button rather than firing prompt() from the submit
+              handler — that runs after an awaited network call, by which point
+              the transient user activation prompt() needs may have expired, so
+              it would fail silently on a slow connection. A tap here is always
+              a fresh gesture, and never spends the one-shot prompt uninvited. */}
+          {canInstall() && !installOffered && (
+            <button
+              onClick={async () => {
+                await promptInstall()
+                setInstallOffered(true)
+              }}
+              className="btn-primary mt-6 !py-2.5 !text-xs"
+            >
+              Install the app
+            </button>
+          )}
+
+          <button
+            onClick={() => setSent(false)}
+            className="mt-6 block w-full text-xs font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
+          >
             Use a different email
           </button>
         </div>

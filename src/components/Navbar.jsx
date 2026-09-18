@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
-import { promptInstall } from '../lib/pwaInstall'
 
 const links = [
   { label: 'Services', href: '#services' },
@@ -49,12 +48,9 @@ export default function Navbar() {
         </div>
 
         {/* Access, not acquisition — the hero carries the acquisition CTA, and
-            until now a returning user had no route back to their projects.
-            Also where the PWA install is offered: someone signing in is a
-            returning user, a far better moment to suggest installing than a
-            first-time visitor in the hero. No-ops where unsupported. */}
+            until now a returning user had no route back to their projects. */}
         <div className="hidden md:block">
-          <Link to="/portal" onClick={() => promptInstall()} className="btn-primary !px-6 !py-2.5">
+          <Link to="/portal" className="btn-primary !px-6 !py-2.5">
             Sign in
           </Link>
         </div>
@@ -89,14 +85,7 @@ export default function Navbar() {
               {l.label}
             </a>
           ))}
-          <Link
-            to="/portal"
-            onClick={() => {
-              setOpen(false)
-              promptInstall()
-            }}
-            className="btn-primary mt-2"
-          >
+          <Link to="/portal" onClick={() => setOpen(false)} className="btn-primary mt-2">
             Sign in
           </Link>
         </div>
