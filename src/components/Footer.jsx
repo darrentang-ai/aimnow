@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Logo from './Logo'
 
 const groups = [
@@ -23,9 +24,9 @@ export default function Footer() {
               AI strategy consultancy turning AI from buzzword into roadmap — and a marketplace of trusted
               AI Managers to build it.
             </p>
-            <a href="#portal" className="btn-primary mt-6 !px-6 !py-2.5">
-              Join the Portal
-            </a>
+            <Link to="/portal" className="btn-primary mt-6 !px-6 !py-2.5">
+              Post a project
+            </Link>
           </div>
 
           {groups.map((g) => (

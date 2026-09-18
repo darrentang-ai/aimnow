@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { Eyebrow } from './ui'
-import { promptInstall } from '../lib/pwaInstall'
 
 export default function Hero() {
   return (
@@ -41,12 +41,16 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.18 }}
             className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
-            <a href="#portal" onClick={() => promptInstall()} className="btn-primary w-full sm:w-auto !text-sm sm:!text-base">
-              Join the AI Manager Portal
+            {/* Names the outcome, not the mechanism — and it is the one action
+                the Portal actually performs. The PWA install prompt that used
+                to fire here now lives on the navbar's Sign in: a returning
+                user is a better moment to offer it than a first-time visitor. */}
+            <Link to="/portal" className="btn-primary w-full sm:w-auto !text-sm sm:!text-base">
+              Post a project
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="transition-transform group-hover:translate-x-1">
                 <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-            </a>
+            </Link>
             <a href="#services" className="btn-ghost w-full sm:w-auto !text-sm sm:!text-base">
               Explore Consultancy
             </a>

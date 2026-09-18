@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Reveal, SectionHead } from './ui'
 import { trackPlanClick } from '../lib/analytics'
 
@@ -15,6 +16,9 @@ const tiers = [
     features: ['Discovery call', 'View projects', 'Post one project', 'Notified when bids arrive', 'Community support'],
     cta: 'Create free account',
     interest: 'AI Manager Portal — Free plan',
+    // The only tier that is self-service: it goes to the real app. The paid
+    // tiers stay sales-led because there is no billing yet.
+    href: '/portal',
     plan: 'free', // Tracked — see trackPlanClick.
     featured: false,
   },
@@ -25,6 +29,7 @@ const tiers = [
     features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement', 'Save 20% billed annually (€39/month)'],
     cta: 'Start Premium plan',
     interest: 'AI Manager Portal — Premium plan',
+    href: '#contact',
     plan: 'premium', // Tracked — see trackPlanClick.
     featured: true,
   },
@@ -35,9 +40,35 @@ const tiers = [
     features: ['Multi-user accounts', 'API access', 'White-label reporting', 'SLA guarantee', 'Dedicated support', 'Retainer agreement'],
     cta: 'Contact sales',
     interest: 'AI Manager Portal — Enterprise plan',
+    href: '#contact',
     featured: false,
   },
 ]
+
+// An in-app route needs a router Link, an on-page anchor a plain <a>, so the
+// element depends on where the tier points.
+function TierCta({ tier }) {
+  const isRoute = tier.href.startsWith('/')
+  const className = `mt-8 block w-full text-center ${tier.featured ? 'btn-primary' : 'btn-ghost'}`
+
+  const onClick = () => {
+    // Only tiers carrying a `plan` are measured; add one to Enterprise if it
+    // needs tracking too.
+    if (tier.plan) trackPlanClick(tier.plan)
+    // Preselecting the contact form is pointless when we're leaving the page.
+    if (!isRoute) window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: tier.interest }))
+  }
+
+  return isRoute ? (
+    <Link to={tier.href} onClick={onClick} className={className}>
+      {tier.cta}
+    </Link>
+  ) : (
+    <a href={tier.href} onClick={onClick} className={className}>
+      {tier.cta}
+    </a>
+  )
+}
 
 export default function Portal() {
   return (
@@ -95,18 +126,7 @@ export default function Portal() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href="#contact"
-                  onClick={() => {
-                    // Only tiers carrying a `plan` are measured; add one to
-                    // Enterprise if it needs tracking too.
-                    if (t.plan) trackPlanClick(t.plan)
-                    window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: t.interest }))
-                  }}
-                  className={`mt-8 block w-full text-center ${t.featured ? 'btn-primary' : 'btn-ghost'}`}
-                >
-                  {t.cta}
-                </a>
+                <TierCta tier={t} />
               </div>
             </Reveal>
           ))}
