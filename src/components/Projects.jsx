@@ -86,15 +86,22 @@ const companies = [
   },
 ]
 
-function Stars({ n }) {
+// A span, not a div, so it is valid inside a paragraph as well as standing on
+// its own above a quote. `label` lets a caller replace the announced text when
+// the stars sit mid-sentence, where "Rated 5 out of 5" reads badly.
+function Stars({ n, size = 'h-3.5 w-3.5', label }) {
   return (
-    <div className="flex items-center gap-0.5" aria-label={`Rated ${n} out of 5`}>
+    <span
+      role="img"
+      aria-label={label ?? `Rated ${n} out of 5`}
+      className="inline-flex items-center gap-0.5 align-middle"
+    >
       {Array.from({ length: 5 }).map((_, i) => (
-        <svg key={i} viewBox="0 0 24 24" className={`h-3.5 w-3.5 ${i < n ? 'text-cyan-glow' : 'text-white/15'}`} fill="currentColor">
+        <svg key={i} viewBox="0 0 24 24" className={`${size} ${i < n ? 'text-cyan-glow' : 'text-white/15'}`} fill="currentColor">
           <path d="m12 2 2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77 5.82 21l1.18-6.88-5-4.87 7.1-1.01L12 2Z" />
         </svg>
       ))}
-    </div>
+    </span>
   )
 }
 
@@ -161,7 +168,12 @@ export default function Projects() {
           <SectionHead
             eyebrow="Our work"
             title="Recent projects"
-            sub="Four five-star reviews across three businesses — custom tools and rebuilds they own outright."
+            sub={
+              <>
+                Four <Stars n={5} size="h-4 w-4" label="five-star" /> reviews across three businesses —
+                custom tools and rebuilds they own outright.
+              </>
+            }
           />
         </Reveal>
 
