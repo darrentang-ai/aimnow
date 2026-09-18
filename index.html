@@ -2,16 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZNQFP5NY"></script>
-    <script>
-      window.dataLayer = window.dataLayer || []
-      function gtag() {
-        dataLayer.push(arguments)
-      }
-      gtag('js', new Date())
+    <!-- Google tag (gtag.js) — production hosts only.
+         localhost, test.aimnow.io and Netlify deploy previews otherwise all
+         report into the same property, so our own browsing shows up as real
+         traffic. Loading is skipped entirely rather than filtered afterwards,
+         so no hit is sent at all.
 
-      gtag('config', 'G-ZCZNQFP5NY')
+         Nothing else needs to know about this: src/lib/analytics.js already
+         no-ops when window.gtag is undefined, so every custom event goes quiet
+         off production for free.
+
+         Append ?ga_test=1 to report deliberately from another host. -->
+    <script>
+      ;(function () {
+        var host = location.hostname
+        var isProduction = host === 'aimnow.io' || host === 'www.aimnow.io'
+        if (!isProduction && location.search.indexOf('ga_test=1') === -1) return
+
+        var id = 'G-ZCZNQFP5NY'
+        var s = document.createElement('script')
+        s.async = true
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id
+        document.head.appendChild(s)
+
+        window.dataLayer = window.dataLayer || []
+        window.gtag = function () {
+          dataLayer.push(arguments)
+        }
+        gtag('js', new Date())
+        gtag('config', id)
+      })()
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
