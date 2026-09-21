@@ -63,6 +63,20 @@ export async function setProjectStatus(projectId, status) {
   return supabase.from('projects').update({ status }).eq('id', projectId)
 }
 
+// Irreversible: there is no soft-delete column, and the project's assignments
+// go with it via `on delete cascade`. Cancelling is the reversible option.
+export async function deleteProject(projectId) {
+  // Ask for the deleted row back. A delete refused by row-level security
+  // reports no error at all — it simply affects nothing — so the returned rows
+  // are the only way to tell success from a silent permission failure.
+  const { data, error } = await supabase.from('projects').delete().eq('id', projectId).select('id')
+  if (error) return { error }
+  if (!data?.length) {
+    return { error: { message: 'Nothing was deleted. Check you are still signed in as an admin.' } }
+  }
+  return {}
+}
+
 export function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 }
