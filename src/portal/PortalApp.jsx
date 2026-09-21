@@ -116,7 +116,7 @@ export default function PortalApp() {
 
   const dashboard =
     profile.role === 'admin' ? (
-      <AdminDashboard />
+      <AdminDashboard userId={userId} />
     ) : profile.role === 'manager' ? (
       <ManagerDashboard />
     ) : (

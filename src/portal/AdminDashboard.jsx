@@ -1,7 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
-import { assignProject, deleteProject, loadManagers, loadProjects, setProjectStatus } from './data'
+import {
+  assignProject,
+  deleteProject,
+  formatDate,
+  loadManagers,
+  loadPeople,
+  loadProjects,
+  setProfileRole,
+  setProjectStatus,
+} from './data'
 import ProjectCard from './ProjectCard'
 import { Alert, Empty, PageHead } from './ui'
+
+const ROLES = ['business', 'manager', 'admin']
+const NEW_FOR_MS = 7 * 24 * 60 * 60 * 1000
 
 const NEXT_STATUS = {
   assigned: [['in_progress', 'Mark in progress'], ['cancelled', 'Cancel']],
@@ -107,7 +119,107 @@ function AssignControls({ project, managers, onDone }) {
   )
 }
 
-export default function AdminDashboard() {
+function PersonRow({ person, isSelf, onDone }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const isNew = Date.now() - new Date(person.created_at).getTime() < NEW_FOR_MS
+
+  const change = async (role) => {
+    setBusy(true)
+    setError('')
+    const { error } = await setProfileRole(person.id, role)
+    setBusy(false)
+    if (error) setError(error.message)
+    else onDone()
+  }
+
+  return (
+    <li className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 py-3 first:border-t-0">
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2 text-sm font-semibold text-white">
+          <span className="truncate">{person.full_name || 'No name given'}</span>
+          {isNew && (
+            <span className="shrink-0 rounded-full border border-cyan-glow/30 bg-cyan-glow/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-glow">
+              New
+            </span>
+          )}
+        </p>
+        <p className="truncate text-xs text-slate-500">
+          {person.company || '—'} · joined {formatDate(person.created_at)}
+        </p>
+      </div>
+
+      {/* Changing your own role here would drop your admin rights with no way
+          back in the UI, so your own row is read-only. */}
+      {isSelf ? (
+        <span className="text-xs font-semibold text-slate-400">{person.role} · you</span>
+      ) : (
+        <select
+          value={person.role}
+          disabled={busy}
+          onChange={(e) => change(e.target.value)}
+          className="input !w-auto !py-1.5 !text-xs disabled:opacity-50"
+        >
+          {ROLES.map((r) => (
+            <option key={r} value={r} className="bg-ink-800">
+              {r}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {error && (
+        <div className="w-full">
+          <Alert>{error}</Alert>
+        </div>
+      )}
+    </li>
+  )
+}
+
+// Answers "has anyone signed up?" without a trip to the SQL editor, and makes
+// promoting an AI Manager a UI action rather than a hand-written UPDATE.
+function People({ currentUserId }) {
+  const [people, setPeople] = useState(null)
+  const [error, setError] = useState('')
+
+  const refresh = useCallback(async () => {
+    const { people, error } = await loadPeople()
+    if (error) setError(error.message)
+    else setPeople(people)
+  }, [])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  const newCount = (people ?? []).filter(
+    (p) => Date.now() - new Date(p.created_at).getTime() < NEW_FOR_MS
+  ).length
+
+  return (
+    <section className="mb-10">
+      <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">
+        People <span className="text-slate-500">({people?.length ?? 0})</span>
+        {newCount > 0 && <span className="ml-2 normal-case tracking-normal text-slate-400">{newCount} new this week</span>}
+      </h2>
+      {error && <Alert>{error}</Alert>}
+      {!error && people === null && <p className="text-sm text-slate-400">Loading…</p>}
+      {people?.length === 0 && <Empty>Nobody has signed up yet.</Empty>}
+      {people?.length > 0 && (
+        <div className="card">
+          <ul>
+            {people.map((p) => (
+              <PersonRow key={p.id} person={p} isSelf={p.id === currentUserId} onDone={refresh} />
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  )
+}
+
+export default function AdminDashboard({ userId }) {
   const [projects, setProjects] = useState(null)
   const [managers, setManagers] = useState([])
   const [error, setError] = useState('')
@@ -172,6 +284,10 @@ export default function AdminDashboard() {
             )}
           </section>
         ))}
+
+      {/* After the project queue: assigning work is the job, seeing who signed
+          up is the check-in. */}
+      <People currentUserId={userId} />
     </>
   )
 }

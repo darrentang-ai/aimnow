@@ -77,6 +77,31 @@ export async function deleteProject(projectId) {
   return {}
 }
 
+// Admins can read every profile (the profiles_select policy allows is_admin);
+// everyone else only sees themselves and the managers.
+export async function loadPeople() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, role, full_name, company, created_at')
+    .order('created_at', { ascending: false })
+  return { people: data ?? [], error }
+}
+
+export async function setProfileRole(profileId, role) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', profileId)
+    .select('id, role')
+  if (error) return { error }
+  // guard_role_change() raises, which surfaces as an error above — but a plain
+  // row-level-security refusal returns no error and no rows, so check both.
+  if (!data?.length) {
+    return { error: { message: 'Role was not changed. Check you are still signed in as an admin.' } }
+  }
+  return {}
+}
+
 export function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 }
