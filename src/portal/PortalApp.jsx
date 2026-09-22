@@ -118,7 +118,7 @@ export default function PortalApp() {
     profile.role === 'admin' ? (
       <AdminDashboard userId={userId} />
     ) : profile.role === 'manager' ? (
-      <ManagerDashboard />
+      <ManagerDashboard userId={userId} />
     ) : (
       <BusinessDashboard userId={userId} />
     )

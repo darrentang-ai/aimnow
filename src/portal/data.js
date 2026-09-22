@@ -26,7 +26,7 @@ export async function loadProjects({ ownerId } = {}) {
   if (managerIds.length) {
     const { data, error: mErr } = await supabase
       .from('profiles')
-      .select('id, full_name, company')
+      .select('id, full_name, company, certificates')
       .in('id', managerIds)
     if (mErr) return { error: mErr }
     managers = data ?? []
@@ -103,6 +103,29 @@ export async function setProfileRole(profileId, role) {
   // row-level-security refusal returns no error and no rows, so check both.
   if (!data?.length) {
     return { error: { message: 'Role was not changed. Check you are still signed in as an admin.' } }
+  }
+  return {}
+}
+
+export async function loadCertificates(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('certificates')
+    .eq('id', userId)
+    .maybeSingle()
+  return { certificates: data?.certificates ?? [], error }
+}
+
+export async function saveCertificates(userId, certificates) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ certificates })
+    .eq('id', userId)
+    .select('id')
+  if (error) return { error }
+  // profiles_update_own refuses someone else's row with no error and no rows.
+  if (!data?.length) {
+    return { error: { message: 'Nothing was saved. Check you are still signed in.' } }
   }
   return {}
 }

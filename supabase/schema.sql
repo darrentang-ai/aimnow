@@ -18,6 +18,13 @@ create table profiles (
   role       user_role not null default 'business',
   full_name  text,
   company    text,
+  -- AI Manager credentials: [{ "name": "...", "url": "https://verify..." }].
+  -- Every entry must carry a verification link on a recognised issuer's
+  -- domain — see certificates_valid() below, which the check constraint
+  -- enforces. Projects delivered is deliberately NOT stored here: it is
+  -- counted from completed assignments, so "ranked on real delivery" stays
+  -- true rather than being a number someone types about themselves.
+  certificates jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -56,6 +63,58 @@ create unique index assignments_one_active_per_project
   on assignments (project_id) where status = 'active';
 
 create index assignments_manager_idx on assignments (manager_id);
+
+-- -----------------------------------------------------------------------------
+-- Verifiable certificates
+--
+-- A certificate is only worth showing a business if they can check it, so a
+-- link on an issuer's own verification domain is required. Enforcing this in
+-- the client alone would be decoration: the column is writable through the
+-- API, so a manager could PATCH whatever they liked straight past the form.
+--
+-- Extend the list as managers bring credentials from other issuers, and keep
+-- it in step with VERIFIER_HOSTS in src/portal/certificates.js.
+-- -----------------------------------------------------------------------------
+
+create or replace function certificate_host_allowed(url text)
+returns boolean
+language sql
+immutable
+as $$
+  select exists (
+    select 1
+    from unnest(array[
+      'verify.skilljar.com',      -- Google Cloud Skills Boost, Anthropic
+      'credly.com',               -- AWS, Microsoft, IBM
+      'credential.net',           -- Accredible
+      'coursera.org',
+      'learn.microsoft.com',
+      'cloudskillsboost.google'
+    ]) as allowed(host)
+    -- Compare the host only. A substring match would accept
+    -- https://credly.com.example.com/, which is not Credly at all.
+    where lower(substring(url from '^https://([^/?#]+)')) = allowed.host
+       or lower(substring(url from '^https://([^/?#]+)')) like '%.' || allowed.host
+  )
+$$;
+
+create or replace function certificates_valid(certs jsonb)
+returns boolean
+language sql
+immutable
+as $$
+  select jsonb_typeof(certs) = 'array'
+     and not exists (
+       select 1
+       from jsonb_array_elements(certs) c
+       where jsonb_typeof(c) <> 'object'
+          or coalesce(btrim(c->>'name'), '') = ''
+          or not certificate_host_allowed(coalesce(c->>'url', ''))
+     )
+$$;
+
+alter table profiles
+  add constraint profiles_certificates_verifiable check (certificates_valid(certificates));
 
 -- -----------------------------------------------------------------------------
 -- Helpers
@@ -245,6 +304,25 @@ as $$
    where is_admin()
    order by p.created_at desc
 $$;
+
+-- Existing installs: create the two functions above first, then add the column
+-- and its constraint.
+--
+--   alter table profiles
+--     add column if not exists certificates jsonb not null default '[]'::jsonb;
+--   alter table profiles
+--     add constraint profiles_certificates_verifiable check (certificates_valid(certificates));
+--
+-- If the column already exists as text[] — an earlier revision of this file
+-- created it that way — convert it first. `add column if not exists` will not
+-- change the type of a column that is already there, and the constraint then
+-- fails with "function certificates_valid(text[]) does not exist". Drop the
+-- default before the type change, or Postgres tries to cast '{}' to jsonb.
+--
+--   alter table profiles
+--     alter column certificates drop default,
+--     alter column certificates type jsonb using '[]'::jsonb,
+--     alter column certificates set default '[]'::jsonb;
 
 revoke execute on function admin_list_people() from anon;
 grant execute on function admin_list_people() to authenticated;
