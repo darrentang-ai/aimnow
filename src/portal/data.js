@@ -40,10 +40,15 @@ export async function loadProjects({ ownerId } = {}) {
   return { projects: projects.map((p) => ({ ...p, assignment: byProject[p.id] ?? null })) }
 }
 
+// Certificates come along so the picker can show who is actually assignable —
+// assign_project() rejects anyone under the minimum, and finding that out by
+// hitting the error is a poor way to learn it.
+export const MIN_CERTIFICATES = 2
+
 export async function loadManagers() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, company')
+    .select('id, full_name, company, certificates')
     .eq('role', 'manager')
     .order('full_name')
   return { managers: data ?? [], error }

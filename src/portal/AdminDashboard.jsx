@@ -6,6 +6,7 @@ import {
   loadManagers,
   loadPeople,
   loadProjects,
+  MIN_CERTIFICATES,
   setProfileRole,
   setProjectStatus,
 } from './data'
@@ -48,12 +49,17 @@ function AssignControls({ project, managers, onDone }) {
           <option value="" className="bg-ink-800">
             {project.assignment ? 'Reassign to…' : 'Assign to…'}
           </option>
-          {managers.map((m) => (
-            <option key={m.id} value={m.id} className="bg-ink-800">
-              {m.full_name ?? m.id.slice(0, 8)}
-              {m.company ? ` · ${m.company}` : ''}
-            </option>
-          ))}
+          {managers.map((m) => {
+            const certs = m.certificates?.length ?? 0
+            const eligible = certs >= MIN_CERTIFICATES
+            return (
+              <option key={m.id} value={m.id} disabled={!eligible} className="bg-ink-800">
+                {m.full_name ?? m.id.slice(0, 8)}
+                {m.company ? ` · ${m.company}` : ''}
+                {eligible ? '' : ` — needs ${MIN_CERTIFICATES} certificates (has ${certs})`}
+              </option>
+            )
+          })}
         </select>
         <button
           disabled={!managerId || busy}

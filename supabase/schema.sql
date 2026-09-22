@@ -243,7 +243,8 @@ security definer
 set search_path = public
 as $$
 declare
-  v_row assignments;
+  v_row   assignments;
+  v_certs integer;
 begin
   if not is_admin() then
     raise exception 'Only an admin can assign a project';
@@ -251,6 +252,19 @@ begin
 
   if not exists (select 1 from profiles where id = p_manager_id and role = 'manager') then
     raise exception 'Target user is not an AI Manager';
+  end if;
+
+  -- The FAQ tells businesses that every AI Manager holds at least two verified
+  -- certifications. Checking it here rather than in the admin screen is what
+  -- keeps that claim true: the screen can be bypassed, this cannot.
+  select jsonb_array_length(coalesce(certificates, '[]'::jsonb))
+    into v_certs
+    from profiles
+   where id = p_manager_id;
+
+  if v_certs < 2 then
+    raise exception
+      'This AI Manager has % verified certificate(s). At least 2 are required before assignment.', v_certs;
   end if;
 
   -- Retire any current holder so the partial unique index stays satisfied.
