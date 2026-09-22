@@ -77,9 +77,14 @@ export async function deleteProject(projectId) {
   return {}
 }
 
-// Admins can read every profile (the profiles_select policy allows is_admin);
-// everyone else only sees themselves and the managers.
+// Email is only reachable through admin_list_people(), because it lives in
+// auth.users rather than profiles. Falls back to the plain profiles query when
+// that function doesn't exist yet, so the People section still works on a
+// deployment that has run ahead of the migration — just without emails.
 export async function loadPeople() {
+  const viaRpc = await supabase.rpc('admin_list_people')
+  if (!viaRpc.error) return { people: viaRpc.data ?? [] }
+
   const { data, error } = await supabase
     .from('profiles')
     .select('id, role, full_name, company, created_at')

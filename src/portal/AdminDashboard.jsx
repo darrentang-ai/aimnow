@@ -144,6 +144,9 @@ function PersonRow({ person, isSelf, onDone }) {
             </span>
           )}
         </p>
+        {/* Email is the only thing that tells two people with the same name
+            apart, so it sits directly under it. Absent on the fallback path. */}
+        {person.email && <p className="truncate text-xs text-slate-400">{person.email}</p>}
         <p className="truncate text-xs text-slate-500">
           {person.company || '—'} · joined {formatDate(person.created_at)}
         </p>

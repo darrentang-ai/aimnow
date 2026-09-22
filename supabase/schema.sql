@@ -213,6 +213,43 @@ end
 $$;
 
 -- -----------------------------------------------------------------------------
+-- Listing people, with their email
+--
+-- Email lives in auth.users, which PostgREST does not expose to the client —
+-- correctly, since it would hand every signed-in user the address of everyone
+-- else. Copying it into profiles would go stale the moment someone changes it,
+-- so this joins it live instead.
+--
+-- security definer is what allows reading auth.users at all, and the
+-- `where is_admin()` guard is the entire reason that is safe: for anyone else
+-- the function returns no rows.
+-- -----------------------------------------------------------------------------
+
+create or replace function admin_list_people()
+returns table (
+  id         uuid,
+  role       user_role,
+  full_name  text,
+  company    text,
+  email      text,
+  created_at timestamptz
+)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select p.id, p.role, p.full_name, p.company, u.email::text, p.created_at
+    from profiles p
+    join auth.users u on u.id = p.id
+   where is_admin()
+   order by p.created_at desc
+$$;
+
+revoke execute on function admin_list_people() from anon;
+grant execute on function admin_list_people() to authenticated;
+
+-- -----------------------------------------------------------------------------
 -- Row-level security
 -- -----------------------------------------------------------------------------
 
