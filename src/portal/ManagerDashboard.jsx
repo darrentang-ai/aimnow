@@ -26,7 +26,9 @@ export default function ManagerDashboard() {
       <PageHead title="Assigned to you" sub="Projects AIM Now has matched you with." />
       {error && <Alert>{error}</Alert>}
       {!error && projects === null && <p className="text-sm text-slate-400">Loading…</p>}
-      {projects?.length === 0 && <Empty>Nothing assigned yet. We'll email you when a project is matched to you.</Empty>}
+      {/* No notification exists, so don't promise one — a manager who trusts
+          this would simply never come back. */}
+      {projects?.length === 0 && <Empty>Nothing assigned yet. Anything matched to you will appear here.</Empty>}
       {projects?.length > 0 && (
         <div className="grid gap-5 lg:grid-cols-2">
           {projects.map((p) => (
