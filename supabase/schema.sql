@@ -84,7 +84,8 @@ as $$
   select exists (
     select 1
     from unnest(array[
-      'verify.skilljar.com',      -- Google Cloud Skills Boost, Anthropic
+      'academy.claude.com',       -- Anthropic
+      'verify.skilljar.com',      -- Google Cloud Skills Boost, others on Skilljar
       'credly.com',               -- AWS, Microsoft, IBM
       'credential.net',           -- Accredible
       'coursera.org',

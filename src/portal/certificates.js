@@ -7,7 +7,8 @@
 // manager gets told before they submit, rather than getting a database error.
 // Keep the two lists in step.
 export const VERIFIER_HOSTS = [
-  'verify.skilljar.com', // Google Cloud Skills Boost, Anthropic
+  'academy.claude.com', // Anthropic
+  'verify.skilljar.com', // Google Cloud Skills Boost, and others on Skilljar
   'credly.com', // AWS, Microsoft, IBM
   'credential.net', // Accredible
   'coursera.org',
