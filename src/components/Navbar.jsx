@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
+import { hasSession } from '../lib/session'
 
 const links = [
   { label: 'Services', href: '#services' },
@@ -14,6 +15,10 @@ const links = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  // Read on mount. Navigating to /portal unmounts the whole landing page, so
+  // coming back re-reads and the label stays honest after a sign-out.
+  const [signedIn] = useState(hasSession)
+  const portalLabel = signedIn ? 'Go to Portal' : 'Sign in'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16)
@@ -51,7 +56,7 @@ export default function Navbar() {
             until now a returning user had no route back to their projects. */}
         <div className="hidden md:block">
           <Link to="/portal" className="btn-primary !px-6 !py-2.5">
-            Sign in
+            {portalLabel}
           </Link>
         </div>
 
@@ -86,7 +91,7 @@ export default function Navbar() {
             </a>
           ))}
           <Link to="/portal" onClick={() => setOpen(false)} className="btn-primary mt-2">
-            Sign in
+            {portalLabel}
           </Link>
         </div>
       </div>
