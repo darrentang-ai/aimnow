@@ -147,16 +147,21 @@ export default function SignIn() {
     <div className="mx-auto max-w-md">
       <div className="card">
         <h1 className="font-display text-2xl font-700 text-white">Sign in to the Portal</h1>
+        {/* The pitch differs by who's arriving: a business wants the work done,
+            a manager wants the work. */}
         <p className="mt-2 text-sm leading-relaxed text-slate-400">
-          Post a project and we'll match it with a trusted AI Manager. No password needed — we'll email
-          you a link.
+          {signupAs === 'manager'
+            ? "Join our network and get matched with businesses that need what you build. No password needed — we'll email you a link."
+            : "Post a project and we'll match it with a trusted AI Manager. No password needed — we'll email you a link."}
         </p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           {/* Recorded as an intent, not a role — see signup_as in schema.sql.
               An AI Manager is granted that role by an admin after their
               certificates are checked, so this can't be used to join the
               network by simply claiming to be in it. */}
-          <Field label="I'm signing up as" hint="Only used the first time you sign in.">
+          {/* No hint here: "only used the first time" already sits under Your
+              name, and repeating it crowds the manager note below. */}
+          <Field label="I'm signing up as">
             <div className="grid grid-cols-2 gap-2">
               {[
                 ['business', 'A business'],
@@ -184,7 +189,7 @@ export default function SignIn() {
               verified AI certificates, which you can add once you're signed in.
             </p>
           )}
-          <Field label="Work email" required>
+          <Field label="Email" required>
             <input
               required
               type="email"
