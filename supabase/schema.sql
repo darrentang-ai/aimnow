@@ -74,63 +74,18 @@ create unique index assignments_one_active_per_project
 create index assignments_manager_idx on assignments (manager_id);
 
 -- -----------------------------------------------------------------------------
--- Verifiable certificates
+-- Certificates
 --
--- A certificate is only worth showing a business if they can check it, so a
--- link on an issuer's own verification domain is required. Enforcing this in
--- the client alone would be decoration: the column is writable through the
--- API, so a manager could PATCH whatever they liked straight past the form.
+-- What makes a certificate count is an admin opening the link and approving it
+-- — see set_certificate_approval() and the two-approved gate in
+-- assign_project(). An issuer allowlist used to sit here as well, but it only
+-- ever guessed at what review decides for certain, and it turned away valid
+-- credentials from issuers nobody had thought to add.
 --
--- Extend the list as managers bring credentials from other issuers, and keep
--- it in step with VERIFIER_HOSTS in src/portal/certificates.js.
+-- So the shape check keeps to what a database can actually know: a name, and
+-- an https link. https matters beyond tidiness — these links are rendered as
+-- hrefs, and javascript: would be an href too.
 -- -----------------------------------------------------------------------------
-
-create or replace function certificate_host_allowed(url text)
-returns boolean
-language sql
-immutable
-as $$
-  select exists (
-    select 1
-    from unnest(array[
-      'academy.claude.com',       -- Anthropic
-      'verify.skilljar.com',      -- Google Cloud Skills Boost, others on Skilljar
-      'credly.com',               -- AWS, Microsoft, IBM
-      'credential.net',           -- Accredible
-      'coursera.org',
-      'learn.microsoft.com',
-      'cloudskillsboost.google'
-    ]) as allowed(host)
-    -- Compare the host only. A substring match would accept
-    -- https://credly.com.example.com/, which is not Credly at all.
-    where lower(substring(url from '^https://([^/?#]+)')) = allowed.host
-       or lower(substring(url from '^https://([^/?#]+)')) like '%.' || allowed.host
-  )
-$$;
-
--- The right host is not enough: https://academy.claude.com/test would pass a
--- host check while pointing at no credential at all. This does not prove a
--- certificate exists — only an admin opening the link does that — it just
--- keeps obvious rubbish out of the review queue.
-create or replace function certificate_url_wellformed(url text)
-returns boolean
-language sql
-immutable
-as $$
-  with parts as (
-    select lower(substring(url from '^https://([^/?#]+)')) as host,
-           coalesce(substring(url from '^https://[^/?#]+(/[^?#]*)'), '') as path
-  )
-  select case host
-    -- Known exactly, so checked exactly.
-    when 'academy.claude.com'  then path ~* '^/verify/[0-9a-f]{16,}/?$'
-    when 'verify.skilljar.com' then path ~* '^/c/[0-9a-z]{8,}/?$'
-    -- The rest vary too much to pin down, so just insist on an
-    -- identifier-shaped path rather than a bare or placeholder one.
-    else length(path) >= 10
-  end
-  from parts
-$$;
 
 create or replace function certificates_valid(certs jsonb)
 returns boolean
@@ -143,8 +98,7 @@ as $$
        from jsonb_array_elements(certs) c
        where jsonb_typeof(c) <> 'object'
           or coalesce(btrim(c->>'name'), '') = ''
-          or not certificate_host_allowed(coalesce(c->>'url', ''))
-          or not certificate_url_wellformed(coalesce(c->>'url', ''))
+          or coalesce(c->>'url', '') !~ '^https://[^/?#\s]+'
      )
 $$;
 
@@ -468,7 +422,7 @@ as $$
    order by p.created_at desc
 $$;
 
--- Existing installs: create the two functions above first, then add the column
+-- Existing installs: create certificates_valid() first, then add the column
 -- and its constraint.
 --
 --   alter table profiles

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { describeAccepted, urlLooksLikeCredential, verifierFor } from './certificates'
+import { isVerificationLink } from './certificates'
 import { loadMerits, loadProjects, saveCertificates, savePersonalProjects } from './data'
 import ProjectCard from './ProjectCard'
 import { Alert, Empty, PageHead } from './ui'
@@ -47,12 +47,8 @@ function Merits({ userId, completedCount }) {
     setError('')
 
     if (!trimmedName || !trimmedUrl) return
-    if (!verifierFor(trimmedUrl)) {
-      setError(`That isn't a verification link we recognise. Accepted issuers: ${describeAccepted()}.`)
-      return
-    }
-    if (!urlLooksLikeCredential(trimmedUrl)) {
-      setError("That link is on the right site but doesn't point at a certificate. Paste the full verification URL.")
+    if (!isVerificationLink(trimmedUrl)) {
+      setError('Paste the full https link to the issuer’s verification page.')
       return
     }
     // Say so rather than no-op — a dead button reads as a bug.
@@ -145,7 +141,7 @@ function Merits({ userId, completedCount }) {
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     className="input !w-auto min-w-[14rem] flex-1 !py-2 !text-xs"
-                    placeholder="https://verify.skilljar.com/c/…"
+                    placeholder="https://… verification link"
                   />
                   <button
                     type="submit"
@@ -156,8 +152,8 @@ function Merits({ userId, completedCount }) {
                   </button>
                 </div>
                 <p className="text-[11px] leading-relaxed text-slate-500">
-                  Verification links only, from: {describeAccepted()}. AIM Now checks each link before
-                  it counts — you need two approved to be assigned work.
+                  Link to the issuer’s own verification page, from any issuer. AIM Now opens each link
+                  and checks it before it counts — you need two approved to be assigned work.
                 </p>
               </form>
             </>
