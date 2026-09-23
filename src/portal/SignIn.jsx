@@ -170,7 +170,12 @@ export default function SignIn() {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setSignupAs(value)}
+                  onClick={() => {
+                    setSignupAs(value)
+                    // Company is hidden for managers, so drop anything already
+                    // typed — otherwise it would be submitted invisibly.
+                    if (value === 'manager') setCompany('')
+                  }}
                   aria-pressed={signupAs === value}
                   className={`rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all ${
                     signupAs === value
@@ -196,15 +201,20 @@ export default function SignIn() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"
-              placeholder="you@company.com"
+              // An AI Manager is an individual and may well use a personal
+              // address, so don't imply a company domain.
+              placeholder={signupAs === 'manager' ? 'you@example.com' : 'you@company.com'}
             />
           </Field>
           <Field label="Your name" hint="Only used the first time you sign in.">
             <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="input" placeholder="Jane Doe" />
           </Field>
-          <Field label="Company">
-            <input value={company} onChange={(e) => setCompany(e.target.value)} className="input" placeholder="Acme Ltd" />
-          </Field>
+          {/* An AI Manager joins as an individual, not on behalf of a company. */}
+          {signupAs === 'business' && (
+            <Field label="Company">
+              <input value={company} onChange={(e) => setCompany(e.target.value)} className="input" placeholder="Acme Ltd" />
+            </Field>
+          )}
           <button type="submit" disabled={sending} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-70">
             {sending ? 'Sending…' : 'Email me a sign-in link'}
           </button>
