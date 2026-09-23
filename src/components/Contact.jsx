@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { Reveal, Eyebrow } from './ui'
 import { trackLead } from '../lib/analytics'
 
+// The free plan and becoming an AI Manager are both self-service now — they
+// go to /portal rather than through this form, so offering them here would
+// route someone into an email thread instead of the thing they asked for.
 const interests = [
   'Free 30-min AI discovery call',
-  'AI Manager Portal — Free plan',
   'AI Manager Portal — Premium plan',
   'AI Manager Portal — Enterprise plan',
   'Consultancy engagement',
-  'Become a trusted AI Manager',
   'General enquiry',
 ]
 

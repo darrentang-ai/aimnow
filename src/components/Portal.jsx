@@ -15,9 +15,8 @@ const tiers = [
     note: 'Start exploring',
     features: ['Discovery call', 'View projects', 'Post one project', 'Notified when bids arrive', 'Community support'],
     cta: 'Create free account',
-    interest: 'AI Manager Portal — Free plan',
-    // The only tier that is self-service: it goes to the real app. The paid
-    // tiers stay sales-led because there is no billing yet.
+    // No `interest`: this tier routes into the app rather than the contact
+    // form, so there is nothing to preselect.
     href: '/portal',
     plan: 'free', // Tracked — see trackPlanClick.
     featured: false,

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { canInstall, promptInstall } from '../lib/pwaInstall'
 import { Alert, Field } from './ui'
@@ -72,7 +73,12 @@ export default function SignIn() {
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [company, setCompany] = useState('')
-  const [signupAs, setSignupAs] = useState('business')
+  // /portal?as=manager preselects the AI Manager option, so a link that
+  // promised "become an AI Manager" lands on a form already set to it.
+  const [searchParams] = useSearchParams()
+  const [signupAs, setSignupAs] = useState(
+    searchParams.get('as') === 'manager' ? 'manager' : 'business'
+  )
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')

@@ -8,7 +8,9 @@ const groups = [
     links: [
       ['Consultancy', '#services'],
       ['AI Manager Portal', '#portal'],
-      ['Become an AI Manager', '#contact', 'Become a trusted AI Manager'],
+      // Goes to the real signup with that option preselected, rather than the
+      // contact form — the Portal can take the application directly now.
+      ['Become an AI Manager', '/portal?as=manager'],
     ],
   },
 ]
@@ -33,17 +35,28 @@ export default function Footer() {
             <div key={g.title}>
               <h4 className="font-display text-sm font-600 text-white">{g.title}</h4>
               <ul className="mt-4 space-y-2.5">
-                {g.links.map(([label, href, interest]) => (
-                  <li key={label}>
-                    <a
-                      href={href}
-                      onClick={interest ? () => window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: interest })) : undefined}
-                      className="text-sm text-slate-400 transition-colors hover:text-cyan-glow"
-                    >
-                      {label}
-                    </a>
-                  </li>
-                ))}
+                {g.links.map(([label, href, interest]) => {
+                  const className = 'text-sm text-slate-400 transition-colors hover:text-cyan-glow'
+                  // An in-app route needs a router Link; an on-page anchor a
+                  // plain <a>, which can also preselect the contact form.
+                  return (
+                    <li key={label}>
+                      {href.startsWith('/') ? (
+                        <Link to={href} className={className}>
+                          {label}
+                        </Link>
+                      ) : (
+                        <a
+                          href={href}
+                          onClick={interest ? () => window.dispatchEvent(new CustomEvent('aimnow:interest', { detail: interest })) : undefined}
+                          className={className}
+                        >
+                          {label}
+                        </a>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           ))}
