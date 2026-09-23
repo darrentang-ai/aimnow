@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: 'How are your AI Managers vetted?',
-    a: 'Every AI Manager in our network holds a minimum of two AI certifications. They aren’t self-declared: each one links through to the issuer’s own verification page, so you can check them yourself rather than take our word for it. You’ll see them on your project once a manager is assigned.',
+    a: 'Every AI Manager in our network holds a minimum of two AI certifications. They aren’t taken on trust: a manager submits a link to the issuer’s own verification page, and we open it and check the credential before it counts towards the two. Nobody can be assigned a project until at least two have passed that check. You’ll see them, with their links, on your project once a manager is assigned — so you can check them yourself too.',
   },
   {
     q: 'Do you build custom tools, or just advise?',

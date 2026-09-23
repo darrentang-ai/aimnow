@@ -1,6 +1,9 @@
 import { formatDate, managerLabel } from './data'
 import { StatusBadge } from './ui'
 
+const approvedCertificates = (manager) =>
+  (manager?.certificates ?? []).filter((c) => c.approved)
+
 // Shared by all three dashboards; `children` is where each role's controls go.
 export default function ProjectCard({ project, showOwner = false, children }) {
   return (
@@ -41,10 +44,12 @@ export default function ProjectCard({ project, showOwner = false, children }) {
           </span>
         </p>
         {/* The manager's credentials, shown to whoever they were assigned to —
-            otherwise merits are write-only and do nobody any good. */}
-        {project.assignment?.manager?.certificates?.length > 0 && (
+            otherwise merits are write-only and do nobody any good. Approved
+            ones only: a business seeing a certificate here should be able to
+            read it as one we have checked, which is what the FAQ promises. */}
+        {approvedCertificates(project.assignment?.manager).length > 0 && (
           <ul className="mt-2 flex flex-wrap gap-1.5">
-            {project.assignment.manager.certificates.map((c) => (
+            {approvedCertificates(project.assignment.manager).map((c) => (
               <li key={c.url}>
                 <a
                   href={c.url}
