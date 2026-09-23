@@ -142,11 +142,18 @@ function PersonRow({ person, isSelf, onDone }) {
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 py-3 first:border-t-0">
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-2 text-sm font-semibold text-white">
+        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
           <span className="truncate">{person.full_name || 'No name given'}</span>
           {isNew && (
             <span className="shrink-0 rounded-full border border-cyan-glow/30 bg-cyan-glow/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-glow">
               New
+            </span>
+          )}
+          {/* They asked to be a manager and haven't been granted it — this is
+              the queue of applications, and nothing else would show it. */}
+          {person.signup_as === 'manager' && person.role === 'business' && (
+            <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+              Applied as manager
             </span>
           )}
         </p>

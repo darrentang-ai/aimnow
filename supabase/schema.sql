@@ -25,6 +25,10 @@ create table profiles (
   -- counted from completed assignments, so "ranked on real delivery" stays
   -- true rather than being a number someone types about themselves.
   certificates jsonb not null default '[]'::jsonb,
+  -- What they said they were when signing up. Deliberately separate from
+  -- `role`: this is a request, and granting it is an admin decision made after
+  -- checking their certificates. Constrained so it can never carry 'admin'.
+  signup_as text check (signup_as in ('business', 'manager')),
   created_at timestamptz not null default now()
 );
 
@@ -203,7 +207,13 @@ create trigger projects_guard_status
   before update on projects
   for each row execute function guard_status_change();
 
--- Every auth user gets a profile, defaulting to the 'business' role.
+-- Every auth user gets a profile.
+--
+-- `role` is NOT read from the signup metadata and never should be: that
+-- metadata is whatever the browser sent, so honouring it would let anyone sign
+-- up as an admin and read every project in the system. Their stated intent is
+-- recorded in signup_as for an admin to act on; the role itself stays at the
+-- column default of 'business' until someone grants it.
 create or replace function handle_new_user()
 returns trigger
 language plpgsql
@@ -211,11 +221,12 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into profiles (id, full_name, company)
+  insert into profiles (id, full_name, company, signup_as)
   values (
     new.id,
     nullif(new.raw_user_meta_data->>'full_name', ''),
-    nullif(new.raw_user_meta_data->>'company', '')
+    nullif(new.raw_user_meta_data->>'company', ''),
+    case when new.raw_user_meta_data->>'signup_as' = 'manager' then 'manager' else 'business' end
   );
   return new;
 end
@@ -306,6 +317,7 @@ returns table (
   full_name  text,
   company    text,
   email      text,
+  signup_as  text,
   created_at timestamptz
 )
 language sql
@@ -313,7 +325,7 @@ security definer
 stable
 set search_path = public
 as $$
-  select p.id, p.role, p.full_name, p.company, u.email::text, p.created_at
+  select p.id, p.role, p.full_name, p.company, u.email::text, p.signup_as, p.created_at
     from profiles p
     join auth.users u on u.id = p.id
    where is_admin()

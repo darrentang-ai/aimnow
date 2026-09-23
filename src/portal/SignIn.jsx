@@ -72,6 +72,7 @@ export default function SignIn() {
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [company, setCompany] = useState('')
+  const [signupAs, setSignupAs] = useState('business')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
@@ -86,8 +87,11 @@ export default function SignIn() {
       options: {
         emailRedirectTo: `${window.location.origin}/portal`,
         // Only applied when the auth user is first created; the
-        // handle_new_user trigger copies these into the profile row.
-        data: { full_name: fullName, company },
+        // handle_new_user trigger copies these into the profile row. Note
+        // signup_as lands in `signup_as`, never in `role` — this is metadata
+        // the browser controls, so it states an intent rather than granting
+        // anything.
+        data: { full_name: fullName, company, signup_as: signupAs },
       },
     })
     setSending(false)
@@ -148,6 +152,38 @@ export default function SignIn() {
           you a link.
         </p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          {/* Recorded as an intent, not a role — see signup_as in schema.sql.
+              An AI Manager is granted that role by an admin after their
+              certificates are checked, so this can't be used to join the
+              network by simply claiming to be in it. */}
+          <Field label="I'm signing up as" hint="Only used the first time you sign in.">
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ['business', 'A business'],
+                ['manager', 'An AI Manager'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSignupAs(value)}
+                  aria-pressed={signupAs === value}
+                  className={`rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all ${
+                    signupAs === value
+                      ? 'border-cyan-glow/50 bg-cyan-glow/10 text-cyan-glow'
+                      : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/25'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </Field>
+          {signupAs === 'manager' && (
+            <p className="-mt-1 text-xs leading-relaxed text-slate-500">
+              We'll review your application before you join the network. You'll need at least two
+              verified AI certificates, which you can add once you're signed in.
+            </p>
+          )}
           <Field label="Work email" required>
             <input
               required
