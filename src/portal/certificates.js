@@ -32,6 +32,29 @@ export function verifierFor(url) {
   return VERIFIER_HOSTS.find((h) => host === h || host.endsWith(`.${h}`)) ?? null
 }
 
+// The right host isn't enough — https://academy.claude.com/test would pass one.
+// This doesn't prove a credential exists; only an admin opening the link does
+// that. It keeps obvious rubbish out of the review queue.
+//
+// Mirrors certificate_url_wellformed() in supabase/schema.sql.
+const SHAPES = {
+  'academy.claude.com': /^\/verify\/[0-9a-f]{16,}\/?$/i,
+  'verify.skilljar.com': /^\/c\/[0-9a-z]{8,}\/?$/i,
+}
+
+export function urlLooksLikeCredential(url) {
+  let parsed
+  try {
+    parsed = new URL(String(url).trim())
+  } catch {
+    return false
+  }
+  const shape = SHAPES[parsed.hostname.toLowerCase()]
+  // Issuers we know exactly are checked exactly; the rest just have to carry
+  // an identifier-shaped path rather than a bare or placeholder one.
+  return shape ? shape.test(parsed.pathname) : parsed.pathname.length >= 10
+}
+
 export function describeAccepted() {
   return VERIFIER_HOSTS.join(', ')
 }

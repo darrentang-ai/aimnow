@@ -54,6 +54,11 @@ export async function loadManagers() {
   return { managers: data ?? [], error }
 }
 
+// Only approved certificates count — see assign_project(), which enforces it.
+export function eligibleToAssign(manager) {
+  return approvedCount(manager?.certificates) >= MIN_CERTIFICATES
+}
+
 // Wraps the security-definer function, so the assignment row and the project
 // status move together instead of as two round trips.
 export async function assignProject({ projectId, managerId, note }) {
@@ -88,7 +93,12 @@ export async function deleteProject(projectId) {
 // deployment that has run ahead of the migration — just without emails.
 export async function loadPeople() {
   const viaRpc = await supabase.rpc('admin_list_people')
-  if (!viaRpc.error) return { people: viaRpc.data ?? [] }
+  if (!viaRpc.error) {
+    // The function returns {id, email, profile} so that adding a profile column
+    // doesn't change its return type. Flatten it here, and callers carry on
+    // seeing one plain object per person.
+    return { people: (viaRpc.data ?? []).map(({ id, email, profile }) => ({ ...profile, id, email })) }
+  }
 
   const { data, error } = await supabase
     .from('profiles')
@@ -112,27 +122,46 @@ export async function setProfileRole(profileId, role) {
   return {}
 }
 
-export async function loadCertificates(userId) {
+export async function loadMerits(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('certificates')
+    .select('certificates, personal_projects')
     .eq('id', userId)
     .maybeSingle()
-  return { certificates: data?.certificates ?? [], error }
+  return {
+    certificates: data?.certificates ?? [],
+    personalProjects: data?.personal_projects ?? [],
+    error,
+  }
 }
 
-export async function saveCertificates(userId, certificates) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ certificates })
-    .eq('id', userId)
-    .select('id')
+async function saveOwnProfile(userId, patch) {
+  const { data, error } = await supabase.from('profiles').update(patch).eq('id', userId).select('id')
   if (error) return { error }
   // profiles_update_own refuses someone else's row with no error and no rows.
   if (!data?.length) {
     return { error: { message: 'Nothing was saved. Check you are still signed in.' } }
   }
   return {}
+}
+
+export const saveCertificates = (userId, certificates) => saveOwnProfile(userId, { certificates })
+
+export const savePersonalProjects = (userId, personalProjects) =>
+  saveOwnProfile(userId, { personal_projects: personalProjects })
+
+// Server-side so the admin check can't be skipped, and so the read-modify-write
+// happens in one statement rather than racing another tab.
+export async function setCertificateApproval(profileId, url, approved) {
+  return supabase.rpc('set_certificate_approval', {
+    p_profile_id: profileId,
+    p_url: url,
+    p_approved: approved,
+  })
+}
+
+export function approvedCount(certificates) {
+  return (certificates ?? []).filter((c) => c.approved === true).length
 }
 
 export function formatDate(iso) {

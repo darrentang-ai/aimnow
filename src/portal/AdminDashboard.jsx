@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  approvedCount,
   assignProject,
   deleteProject,
+  eligibleToAssign,
   formatDate,
   loadManagers,
   loadPeople,
   loadProjects,
   MIN_CERTIFICATES,
+  setCertificateApproval,
   setProfileRole,
   setProjectStatus,
 } from './data'
@@ -50,13 +53,13 @@ function AssignControls({ project, managers, onDone }) {
             {project.assignment ? 'Reassign to…' : 'Assign to…'}
           </option>
           {managers.map((m) => {
-            const certs = m.certificates?.length ?? 0
-            const eligible = certs >= MIN_CERTIFICATES
+            const approved = approvedCount(m.certificates)
+            const eligible = eligibleToAssign(m)
             return (
               <option key={m.id} value={m.id} disabled={!eligible} className="bg-ink-800">
                 {m.full_name ?? m.id.slice(0, 8)}
                 {m.company ? ` · ${m.company}` : ''}
-                {eligible ? '' : ` — needs ${MIN_CERTIFICATES} certificates (has ${certs})`}
+                {eligible ? '' : ` — needs ${MIN_CERTIFICATES} approved certificates (has ${approved})`}
               </option>
             )
           })}
@@ -139,6 +142,15 @@ function PersonRow({ person, isSelf, onDone }) {
     else onDone()
   }
 
+  const approve = async (url, approved) => {
+    setBusy(true)
+    setError('')
+    const { error } = await setCertificateApproval(person.id, url, approved)
+    setBusy(false)
+    if (error) setError(error.message)
+    else onDone()
+  }
+
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 py-3 first:border-t-0">
       <div className="min-w-0 flex-1">
@@ -184,6 +196,73 @@ function PersonRow({ person, isSelf, onDone }) {
         </select>
       )}
 
+      {/* Approval is what makes "verified" mean anything, and it can only be
+          done by a person opening the link — nothing automated can confirm a
+          credential exists. */}
+      {person.certificates?.length > 0 && (
+        <ul className="w-full space-y-1.5 border-t border-white/5 pt-2.5">
+          {person.certificates.map((c) => (
+            <li key={c.url} className="flex flex-wrap items-center gap-2">
+              <a
+                href={c.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-w-0 items-center gap-1 text-xs text-slate-300 transition-colors hover:text-cyan-glow"
+              >
+                <span className="truncate">{c.name}</span>
+                <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none">
+                  <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+              <button
+                disabled={busy}
+                onClick={() => approve(c.url, !c.approved)}
+                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 ${
+                  c.approved
+                    ? 'border-cyan-glow/30 bg-cyan-glow/10 text-cyan-glow hover:border-white/20 hover:text-white'
+                    : 'border-white/15 bg-white/5 text-slate-400 hover:border-cyan-glow/40 hover:text-cyan-glow'
+                }`}
+              >
+                {c.approved ? 'Approved' : 'Approve'}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Self-reported, so presented more quietly than the certificates above
+          and labelled — there is nothing to verify these against. Useful when
+          deciding who to assign, which is why they are here at all. */}
+      {person.personal_projects?.length > 0 && (
+        <div className="w-full border-t border-white/5 pt-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            Personal projects · self-reported
+          </p>
+          <ul className="mt-1.5 space-y-1.5">
+            {person.personal_projects.map((p, i) => (
+              <li key={`${p.title}-${i}`} className="text-xs">
+                {p.url ? (
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
+                  >
+                    {p.title}
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none">
+                      <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </a>
+                ) : (
+                  <span className="font-semibold text-slate-300">{p.title}</span>
+                )}
+                {p.summary && <p className="mt-0.5 leading-relaxed text-slate-500">{p.summary}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {error && (
         <div className="w-full">
           <Alert>{error}</Alert>
@@ -195,7 +274,7 @@ function PersonRow({ person, isSelf, onDone }) {
 
 // Answers "has anyone signed up?" without a trip to the SQL editor, and makes
 // promoting an AI Manager a UI action rather than a hand-written UPDATE.
-function People({ currentUserId }) {
+function People({ currentUserId, onChanged }) {
   const [people, setPeople] = useState(null)
   const [error, setError] = useState('')
 
@@ -203,7 +282,10 @@ function People({ currentUserId }) {
     const { people, error } = await loadPeople()
     if (error) setError(error.message)
     else setPeople(people)
-  }, [])
+    // Approving a certificate or granting a role changes who can be assigned,
+    // so the picker above has to reload too — it holds its own copy.
+    onChanged?.()
+  }, [onChanged])
 
   useEffect(() => {
     refresh()
@@ -303,7 +385,7 @@ export default function AdminDashboard({ userId }) {
 
       {/* After the project queue: assigning work is the job, seeing who signed
           up is the check-in. */}
-      <People currentUserId={userId} />
+      <People currentUserId={userId} onChanged={refresh} />
     </>
   )
 }

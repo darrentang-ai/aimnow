@@ -29,6 +29,11 @@ create table profiles (
   -- `role`: this is a request, and granting it is an admin decision made after
   -- checking their certificates. Constrained so it can never carry 'admin'.
   signup_as text check (signup_as in ('business', 'manager')),
+  -- Work delivered outside the Portal: [{ "title", "summary", "url" }].
+  -- Self-reported, and labelled as such wherever it is shown. It deliberately
+  -- does not feed the delivered count, which stays derived from completed
+  -- assignments so that number keeps meaning something.
+  personal_projects jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -103,6 +108,30 @@ as $$
   )
 $$;
 
+-- The right host is not enough: https://academy.claude.com/test would pass a
+-- host check while pointing at no credential at all. This does not prove a
+-- certificate exists — only an admin opening the link does that — it just
+-- keeps obvious rubbish out of the review queue.
+create or replace function certificate_url_wellformed(url text)
+returns boolean
+language sql
+immutable
+as $$
+  with parts as (
+    select lower(substring(url from '^https://([^/?#]+)')) as host,
+           coalesce(substring(url from '^https://[^/?#]+(/[^?#]*)'), '') as path
+  )
+  select case host
+    -- Known exactly, so checked exactly.
+    when 'academy.claude.com'  then path ~* '^/verify/[0-9a-f]{16,}/?$'
+    when 'verify.skilljar.com' then path ~* '^/c/[0-9a-z]{8,}/?$'
+    -- The rest vary too much to pin down, so just insist on an
+    -- identifier-shaped path rather than a bare or placeholder one.
+    else length(path) >= 10
+  end
+  from parts
+$$;
+
 create or replace function certificates_valid(certs jsonb)
 returns boolean
 language sql
@@ -115,11 +144,33 @@ as $$
        where jsonb_typeof(c) <> 'object'
           or coalesce(btrim(c->>'name'), '') = ''
           or not certificate_host_allowed(coalesce(c->>'url', ''))
+          or not certificate_url_wellformed(coalesce(c->>'url', ''))
      )
 $$;
 
 alter table profiles
   add constraint profiles_certificates_verifiable check (certificates_valid(certificates));
+
+-- Personal projects are free-form, so only the shape is checked: a title is
+-- required, and a link if given must at least be https rather than something
+-- that would render as a broken or hostile href.
+create or replace function personal_projects_valid(items jsonb)
+returns boolean
+language sql
+immutable
+as $$
+  select jsonb_typeof(items) = 'array'
+     and not exists (
+       select 1
+       from jsonb_array_elements(items) p
+       where jsonb_typeof(p) <> 'object'
+          or coalesce(btrim(p->>'title'), '') = ''
+          or (coalesce(p->>'url', '') <> '' and p->>'url' !~ '^https://')
+     )
+$$;
+
+alter table profiles
+  add constraint profiles_personal_projects_shape check (personal_projects_valid(personal_projects));
 
 -- -----------------------------------------------------------------------------
 -- Helpers
@@ -181,6 +232,85 @@ $$;
 create trigger profiles_guard_role
   before update on profiles
   for each row execute function guard_role_change();
+
+-- Approval is what makes "verified" mean anything, and profiles.certificates
+-- is the manager's own row — so without this they could simply mark their own
+-- claims approved and clear the two-certificate gate on assignment.
+--
+-- A manager may still add and remove certificates freely; the flag just isn't
+-- theirs to set. Existing approvals are carried across by url, and anything
+-- new arrives unapproved.
+create or replace function guard_certificate_approval()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if is_admin() then
+    return new;
+  end if;
+
+  select coalesce(
+           jsonb_agg(
+             c || jsonb_build_object(
+               'approved',
+               coalesce((
+                 select (o->>'approved')::boolean
+                   from jsonb_array_elements(coalesce(old.certificates, '[]'::jsonb)) o
+                  where o->>'url' = c->>'url'
+                  limit 1
+               ), false)
+             )
+           ),
+           '[]'::jsonb
+         )
+    into new.certificates
+    from jsonb_array_elements(coalesce(new.certificates, '[]'::jsonb)) c;
+
+  return new;
+end
+$$;
+
+create trigger profiles_guard_certificate_approval
+  before update on profiles
+  for each row execute function guard_certificate_approval();
+
+-- Approving from the client would be a read-modify-write race, and the admin
+-- check belongs on the server rather than in the screen that calls it.
+create or replace function set_certificate_approval(
+  p_profile_id uuid,
+  p_url        text,
+  p_approved   boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not is_admin() then
+    raise exception 'Only an admin can approve a certificate';
+  end if;
+
+  update profiles
+     set certificates = (
+       select coalesce(
+                jsonb_agg(
+                  case when c->>'url' = p_url
+                       then c || jsonb_build_object('approved', p_approved)
+                       else c
+                  end
+                ),
+                '[]'::jsonb
+              )
+         from jsonb_array_elements(certificates) c
+     )
+   where id = p_profile_id;
+end
+$$;
+
+grant execute on function set_certificate_approval(uuid, text, boolean) to authenticated;
 
 -- Status is driven by assignment and by admin action, never by the business
 -- editing its own row. RLS is row-level, so a trigger is the tool for
@@ -269,10 +399,15 @@ begin
   -- The FAQ tells businesses that every AI Manager holds at least two verified
   -- certifications. Checking it here rather than in the admin screen is what
   -- keeps that claim true: the screen can be bypassed, this cannot.
-  select jsonb_array_length(coalesce(certificates, '[]'::jsonb))
+  --
+  -- Only approved ones count. A manager can add any link on an allowed host,
+  -- so counting unapproved claims would let them clear this gate themselves.
+  select count(*)
     into v_certs
-    from profiles
-   where id = p_manager_id;
+    from profiles p,
+         lateral jsonb_array_elements(coalesce(p.certificates, '[]'::jsonb)) c
+   where p.id = p_manager_id
+     and (c->>'approved')::boolean is true;
 
   if v_certs < 2 then
     raise exception
@@ -310,22 +445,23 @@ $$;
 -- the function returns no rows.
 -- -----------------------------------------------------------------------------
 
+-- Returns the whole profile as jsonb rather than a column per field. Naming
+-- each one meant every new profile column changed the return type, and
+-- Postgres refuses that on `create or replace` — so each addition needed a drop
+-- and recreate. The client flattens `profile` back out, so adding a column here
+-- now needs no migration at all.
 create or replace function admin_list_people()
 returns table (
-  id         uuid,
-  role       user_role,
-  full_name  text,
-  company    text,
-  email      text,
-  signup_as  text,
-  created_at timestamptz
+  id      uuid,
+  email   text,
+  profile jsonb
 )
 language sql
 security definer
 stable
 set search_path = public
 as $$
-  select p.id, p.role, p.full_name, p.company, u.email::text, p.signup_as, p.created_at
+  select p.id, u.email::text, to_jsonb(p)
     from profiles p
     join auth.users u on u.id = p.id
    where is_admin()
