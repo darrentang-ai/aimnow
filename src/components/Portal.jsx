@@ -76,7 +76,7 @@ export default function Portal() {
         <Reveal>
           <SectionHead
             eyebrow="The AI Manager Portal"
-            title="AI Management portal matching business demand with highly skilled AI specialists"
+            title="Matching business demand with highly skilled AI specialists"
             sub="A freemium platform that connects businesses with the right builders."
           />
         </Reveal>
