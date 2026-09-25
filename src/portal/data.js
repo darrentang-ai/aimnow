@@ -170,7 +170,7 @@ export async function setProfilePlan(profileId, plan) {
 
 export const PLANS = ['free', 'premium', 'enterprise']
 
-export async function loadMerits(userId) {
+export async function loadAchievements(userId) {
   const { data, error } = await supabase
     .from('profiles')
     .select('certificates, personal_projects')

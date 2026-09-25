@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { isVerificationLink } from './certificates'
-import { loadMerits, loadProjects, saveCertificates, savePersonalProjects } from './data'
+import { loadAchievements, loadProjects, saveCertificates, savePersonalProjects } from './data'
 import ProjectCard from './ProjectCard'
 import { Alert, Empty, PageHead } from './ui'
 
 // Credentials an AI Manager reports about themselves, alongside one number
 // they can't: projects actually delivered through the Portal.
-function Merits({ userId, completedCount }) {
+function Achievements({ userId, completedCount }) {
   const [certificates, setCertificates] = useState(null)
   const [personalProjects, setPersonalProjects] = useState([])
   const [name, setName] = useState('')
@@ -15,7 +15,7 @@ function Merits({ userId, completedCount }) {
   const [error, setError] = useState('')
 
   const refresh = useCallback(async () => {
-    const { certificates, personalProjects, error } = await loadMerits(userId)
+    const { certificates, personalProjects, error } = await loadAchievements(userId)
     if (error) setError(error.message)
     else {
       setCertificates(certificates)
@@ -67,7 +67,7 @@ function Merits({ userId, completedCount }) {
 
   return (
     <section className="mt-12">
-      <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">Your merits</h2>
+      <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">Your achievements</h2>
       <div className="card">
         <div className="flex items-baseline gap-2">
           <span className="font-display text-3xl font-700 text-white">{completedCount}</span>
@@ -334,7 +334,7 @@ export default function ManagerDashboard({ userId }) {
       )}
 
       {/* Only once the project list has loaded, so the count isn't briefly 0. */}
-      {projects !== null && <Merits userId={userId} completedCount={completedCount} />}
+      {projects !== null && <Achievements userId={userId} completedCount={completedCount} />}
     </>
   )
 }

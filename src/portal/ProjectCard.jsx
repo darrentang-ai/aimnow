@@ -44,7 +44,7 @@ export default function ProjectCard({ project, showOwner = false, children }) {
           </span>
         </p>
         {/* The manager's credentials, shown to whoever they were assigned to —
-            otherwise merits are write-only and do nobody any good. Approved
+            otherwise achievements are write-only and do nobody any good. Approved
             ones only: a business seeing a certificate here should be able to
             read it as one we have checked, which is what the FAQ promises. */}
         {approvedCertificates(project.assignment?.manager).length > 0 && (
