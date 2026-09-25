@@ -9,7 +9,9 @@ import {
   loadPeople,
   loadProjects,
   MIN_CERTIFICATES,
+  PLANS,
   setCertificateApproval,
+  setProfilePlan,
   setProfileRole,
   setProjectStatus,
 } from './data'
@@ -142,6 +144,15 @@ function PersonRow({ person, isSelf, onDone }) {
     else onDone()
   }
 
+  const changePlan = async (plan) => {
+    setBusy(true)
+    setError('')
+    const { error } = await setProfilePlan(person.id, plan)
+    setBusy(false)
+    if (error) setError(error.message)
+    else onDone()
+  }
+
   const approve = async (url, approved) => {
     setBusy(true)
     setError('')
@@ -191,6 +202,25 @@ function PersonRow({ person, isSelf, onDone }) {
           {ROLES.map((r) => (
             <option key={r} value={r} className="bg-ink-800">
               {r}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {/* The plan is what the project limit is read from — free is one project,
+          anything else is unlimited. Only shown for businesses, since managers
+          and admins post nothing and are never limited. */}
+      {person.role === 'business' && (
+        <select
+          value={person.plan ?? 'free'}
+          disabled={busy}
+          onChange={(e) => changePlan(e.target.value)}
+          title="Plan — free is capped at one project"
+          className="input !w-auto !py-1.5 !text-xs disabled:opacity-50"
+        >
+          {PLANS.map((p) => (
+            <option key={p} value={p} className="bg-ink-800">
+              {p}
             </option>
           ))}
         </select>

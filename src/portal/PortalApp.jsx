@@ -51,7 +51,7 @@ export default function PortalApp() {
     let cancelled = false
     supabase
       .from('profiles')
-      .select('id, role, full_name, company')
+      .select('id, role, plan, full_name, company')
       .eq('id', userId)
       // maybeSingle, not single: a missing row means the handle_new_user
       // trigger never ran, which is worth reporting clearly rather than as a
@@ -120,14 +120,16 @@ export default function PortalApp() {
     ) : profile.role === 'manager' ? (
       <ManagerDashboard userId={userId} />
     ) : (
-      <BusinessDashboard userId={userId} />
+      <BusinessDashboard userId={userId} plan={profile.plan} />
     )
 
   return (
     <PortalShell {...shellProps}>
       <Routes>
         <Route path="/" element={dashboard} />
-        <Route path="new" element={<PostProject userId={userId} />} />
+        {/* Admins post on a business's behalf and aren't limited, so the plan
+            passed here is only meaningful for a business's own posting. */}
+        <Route path="new" element={<PostProject userId={userId} plan={profile.plan} role={profile.role} />} />
         <Route path="*" element={<Navigate to="/portal" replace />} />
       </Routes>
     </PortalShell>

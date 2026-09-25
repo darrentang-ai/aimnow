@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Reveal, Eyebrow } from './ui'
 import { trackLead } from '../lib/analytics'
+import { interestFromSearch } from '../lib/interest'
 
 // The free plan and becoming an AI Manager are both self-service now — they
 // go to /portal rather than through this form, so offering them here would
@@ -32,6 +33,19 @@ export default function Contact() {
     }
     window.addEventListener('aimnow:interest', onInterest)
     return () => window.removeEventListener('aimnow:interest', onInterest)
+  }, [])
+
+  // ?interest= carries the same thing across a route change, for links that
+  // arrive from /portal rather than from this page — see lib/interest.js.
+  //
+  // Scrolling here rather than relying on the #contact fragment: the browser
+  // resolves that on load, when this section may not have rendered yet, so the
+  // hash alone can silently leave someone at the top of the page.
+  useEffect(() => {
+    const requested = interestFromSearch(window.location.search)
+    if (!requested || !interests.includes(requested)) return
+    setForm((f) => ({ ...f, interest: requested }))
+    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
   const onSubmit = async (e) => {

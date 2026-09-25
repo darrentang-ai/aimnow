@@ -29,6 +29,10 @@ create table profiles (
   -- `role`: this is a request, and granting it is an admin decision made after
   -- checking their certificates. Constrained so it can never carry 'admin'.
   signup_as text check (signup_as in ('business', 'manager')),
+  -- Which plan a business is on. Only an admin may change it — see
+  -- guard_plan_change() — because it decides how many projects they can post.
+  -- Managers and admins carry 'free' and are simply never limited.
+  plan text not null default 'free' check (plan in ('free', 'premium', 'enterprise')),
   -- Work delivered outside the Portal: [{ "title", "summary", "url" }].
   -- Self-reported, and labelled as such wherever it is shown. It deliberately
   -- does not feed the delivered count, which stays derived from completed
@@ -187,6 +191,30 @@ create trigger profiles_guard_role
   before update on profiles
   for each row execute function guard_role_change();
 
+-- The plan is what the project limit is read from, so leaving it writable
+-- would make the limit advisory: a business could PATCH themselves onto
+-- 'enterprise' and post as much as they liked. Same NULL-uid exemption as
+-- above, so the SQL editor and service_role can still set it.
+create or replace function guard_plan_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.plan is distinct from old.plan
+     and auth.uid() is not null
+     and not is_admin() then
+    raise exception 'Only an admin can change a plan';
+  end if;
+  return new;
+end
+$$;
+
+create trigger profiles_guard_plan
+  before update on profiles
+  for each row execute function guard_plan_change();
+
 -- Approval is what makes "verified" mean anything, and profiles.certificates
 -- is the manager's own row — so without this they could simply mark their own
 -- claims approved and clear the two-certificate gate on assignment.
@@ -290,6 +318,62 @@ $$;
 create trigger projects_guard_status
   before update on projects
   for each row execute function guard_status_change();
+
+-- The free plan is one project. Enforced here rather than in an RLS `with
+-- check` clause for the message: a policy refusal surfaces as "new row
+-- violates row-level security policy", which tells a business nothing about
+-- what to do next, and the screen can't tell it apart from being signed out.
+--
+-- Cancelled projects don't count, so a business that abandons an idea gets its
+-- slot back rather than being stuck with a dead row. Deleting one frees it too.
+--
+-- Admins are exempt so they can post on someone's behalf, and the limit is
+-- read from the owner's plan rather than the caller's — an admin posting for a
+-- free business still fills that business's one slot.
+create or replace function enforce_project_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_plan  text;
+  v_count integer;
+begin
+  if is_admin() then
+    return new;
+  end if;
+
+  select plan into v_plan from profiles where id = new.owner_id;
+
+  -- Only the free plan is capped. Paid plans are unlimited, and a NULL plan
+  -- (a profile row predating the column) is treated as free.
+  if coalesce(v_plan, 'free') <> 'free' then
+    return new;
+  end if;
+
+  select count(*)
+    into v_count
+    from projects
+   where owner_id = new.owner_id
+     and status <> 'cancelled';
+
+  -- Two inserts racing could both read 0 and both pass. A unique index would
+  -- close that, but it would cap paid plans at one project too, so this is
+  -- left as it is: the cost is a business briefly having two rows, and an
+  -- admin can cancel one.
+  if v_count >= 1 then
+    raise exception 'PROJECT_LIMIT_REACHED'
+      using hint = 'The free plan covers one project. Upgrade to post another.';
+  end if;
+
+  return new;
+end
+$$;
+
+create trigger projects_enforce_limit
+  before insert on projects
+  for each row execute function enforce_project_limit();
 
 -- Every auth user gets a profile.
 --
@@ -422,6 +506,16 @@ as $$
    order by p.created_at desc
 $$;
 
+-- Existing installs, for the project limit:
+--
+--   alter table profiles
+--     add column if not exists plan text not null default 'free'
+--       check (plan in ('free', 'premium', 'enterprise'));
+--
+-- then create guard_plan_change() and enforce_project_limit() above with their
+-- triggers. Businesses already holding more than one project keep them — the
+-- trigger is on insert, so it only stops the next one.
+--
 -- Existing installs: create certificates_valid() first, then add the column
 -- and its constraint.
 --

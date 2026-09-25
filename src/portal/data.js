@@ -40,6 +40,37 @@ export async function loadProjects({ ownerId } = {}) {
   return { projects: projects.map((p) => ({ ...p, assignment: byProject[p.id] ?? null })) }
 }
 
+// How many projects a plan may have open at once. Mirrors
+// enforce_project_limit() in supabase/schema.sql, which is what actually stops
+// the insert — this copy exists so the screen can offer the upgrade instead of
+// letting someone fill in a form that is going to be refused.
+const PROJECT_LIMITS = { free: 1 }
+
+// Undefined means no limit. Cancelled projects don't count, matching the
+// trigger — cancelling one gives the slot back.
+export function projectLimitFor(plan) {
+  return PROJECT_LIMITS[plan ?? 'free']
+}
+
+export function countsTowardLimit(projects) {
+  return (projects ?? []).filter((p) => p.status !== 'cancelled').length
+}
+
+export function atProjectLimit(plan, projects) {
+  const limit = projectLimitFor(plan)
+  return limit !== undefined && countsTowardLimit(projects) >= limit
+}
+
+// The trigger raises PROJECT_LIMIT_REACHED rather than a sentence, so the
+// wording lives here with the rest of the copy. Anything else is passed
+// through as-is.
+export function describeInsertError(error) {
+  if (!error) return ''
+  return error.message?.includes('PROJECT_LIMIT_REACHED')
+    ? 'The free plan covers one project. Upgrade to post another.'
+    : error.message
+}
+
 // Certificates come along so the picker can show who is actually assignable —
 // assign_project() rejects anyone under the minimum, and finding that out by
 // hitting the error is a poor way to learn it.
@@ -121,6 +152,23 @@ export async function setProfileRole(profileId, role) {
   }
   return {}
 }
+
+// Upgrading is a sales conversation rather than a checkout, so a plan is
+// granted here after it is agreed. guard_plan_change() refuses anyone else.
+export async function setProfilePlan(profileId, plan) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ plan })
+    .eq('id', profileId)
+    .select('id, plan')
+  if (error) return { error }
+  if (!data?.length) {
+    return { error: { message: 'Plan was not changed. Check you are still signed in as an admin.' } }
+  }
+  return {}
+}
+
+export const PLANS = ['free', 'premium', 'enterprise']
 
 export async function loadMerits(userId) {
   const { data, error } = await supabase

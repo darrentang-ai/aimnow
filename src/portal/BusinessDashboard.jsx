@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { loadProjects } from './data'
+import { atProjectLimit, loadProjects } from './data'
 import ProjectCard from './ProjectCard'
-import { Alert, Empty, PageHead } from './ui'
+import { Alert, Empty, PageHead, UPGRADE_HREF } from './ui'
 
-export default function BusinessDashboard({ userId }) {
+export default function BusinessDashboard({ userId, plan }) {
   const [projects, setProjects] = useState(null)
   const [error, setError] = useState('')
 
@@ -20,15 +20,25 @@ export default function BusinessDashboard({ userId }) {
     }
   }, [userId])
 
+  // Until the projects load we don't know, and showing "Post a project" only
+  // to swap it a moment later reads worse than showing nothing yet.
+  const limitReached = projects !== null && atProjectLimit(plan, projects)
+
   return (
     <>
       <PageHead
         title="Your projects"
         sub="Post what you need and we'll assign a trusted AI Manager to deliver it with you."
         action={
-          <Link to="/portal/new" className="btn-primary !py-3">
-            Post a project
-          </Link>
+          limitReached ? (
+            <Link to={UPGRADE_HREF} className="btn-ghost !py-3">
+              Upgrade to post another
+            </Link>
+          ) : (
+            <Link to="/portal/new" className="btn-primary !py-3">
+              Post a project
+            </Link>
+          )
         }
       />
       {error && <Alert>{error}</Alert>}

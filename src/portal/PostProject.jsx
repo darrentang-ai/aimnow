@@ -1,16 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Alert, Field, PageHead } from './ui'
+import { atProjectLimit, describeInsertError, loadProjects } from './data'
+import { Alert, Field, PageHead, UpgradePrompt } from './ui'
 
 const BUDGETS = ['Under €2,000', '€2,000 – €5,000', '€5,000 – €15,000', '€15,000+', 'Not sure yet']
 const TIMELINES = ['As soon as possible', 'Within a month', 'This quarter', 'Just exploring']
 
-export default function PostProject({ userId }) {
+export default function PostProject({ userId, plan, role }) {
   const navigate = useNavigate()
   const [form, setForm] = useState({ title: '', summary: '', budget_range: BUDGETS[4], timeline: TIMELINES[1] })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  // undefined until we know. The dashboard hides the button at the limit, but
+  // /portal/new is a URL like any other, so the check belongs here too —
+  // otherwise someone types it in, fills the form, and is refused at the end.
+  const [limitReached, setLimitReached] = useState(role === 'admin' ? false : undefined)
+
+  useEffect(() => {
+    if (role === 'admin') return
+    let cancelled = false
+    loadProjects({ ownerId: userId }).then(({ projects, error }) => {
+      if (cancelled) return
+      // Failing open: a lookup error shouldn't block posting, and the trigger
+      // is what actually enforces the limit either way.
+      if (error) setLimitReached(false)
+      else setLimitReached(atProjectLimit(plan, projects))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [userId, plan, role])
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
@@ -21,8 +41,23 @@ export default function PostProject({ userId }) {
     // owner_id must match auth.uid() or the projects_insert_own policy rejects it.
     const { error } = await supabase.from('projects').insert({ ...form, owner_id: userId })
     setSaving(false)
-    if (error) setError(error.message)
+    // enforce_project_limit() can still refuse this — another tab may have
+    // posted since the check above — so translate that case rather than
+    // showing the raw exception.
+    if (error) setError(describeInsertError(error))
     else navigate('/portal')
+  }
+
+  if (limitReached === undefined) {
+    return <p className="text-sm text-slate-400">Loading…</p>
+  }
+
+  if (limitReached) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <UpgradePrompt />
+      </div>
+    )
   }
 
   return (
