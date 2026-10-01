@@ -27,7 +27,7 @@ export default function Footer() {
               AI Managers to build it.
             </p>
             <Link to="/portal" className="btn-primary mt-6 !px-6 !py-2.5">
-              Post a project
+              Post your first project free
             </Link>
           </div>
 

@@ -46,7 +46,7 @@ export default function Hero() {
                 to fire here now lives on the navbar's Sign in: a returning
                 user is a better moment to offer it than a first-time visitor. */}
             <Link to="/portal" className="btn-primary w-full sm:w-auto !text-sm sm:!text-base">
-              Post a project
+              Post your first project free
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="transition-transform group-hover:translate-x-1">
                 <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
