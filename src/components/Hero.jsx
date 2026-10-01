@@ -21,7 +21,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.05 }}
             className="mt-6 font-display text-4xl font-700 leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl"
           >
-            We match businesses with
+            Matching businesses with
             <br className="hidden sm:block" /> trusted AI Managers
           </motion.h1>
 
@@ -31,8 +31,8 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.12 }}
             className="mx-auto mt-6 max-w-4xl text-base leading-relaxed text-slate-300 sm:text-lg"
           >
-            AIM Now empowers small and medium-sized businesses to navigate the AI landscape with
-            confidence. We blend strategic insight with access to a network of Generative AI specialists, developing your own tools to help your business - with no ongoing AI platform dependency and costs once delivered.
+            We blend strategic insight with access to a network of Generative AI specialists, building
+            tools you own — with no ongoing platform dependency or cost once delivered.
           </motion.p>
 
           <motion.div
