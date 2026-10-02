@@ -57,15 +57,16 @@ export default function Hero() {
           </motion.div>
 
           {/* Above-the-fold proof, and the only pull toward #projects before
-              three other sections. Update the client names if the work changes. */}
+              three other sections. Hand-kept count — mirrors the note in
+              Projects.jsx; update both if the work changes. */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.24 }}
             className="mt-8 text-sm text-slate-400"
           >
-            Astra Worldwide · Gaucín Properties · NetWise UK —{' '}
-            <span className="text-cyan-glow">★★★★★</span> on every project.{' '}
+            4 projects delivered for Astra Worldwide · Gaucín Properties · NetWise UK —{' '}
+            <span className="text-cyan-glow">★★★★★</span> on every one.{' '}
             <a
               href="#projects"
               className="inline-flex items-center gap-1 font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
