@@ -8,6 +8,9 @@ const steps = [
   { n: '03', title: 'Monitor delivery', desc: 'Track milestones, comms, and outcomes from a single managed portal.' },
 ]
 
+// None of these are self-serve checkouts — Free never charges, and the other
+// two are sold by talking to us — so each shows a tagline rather than a price
+// figure, at the same size across all three cards.
 const tiers = [
   {
     name: 'Free',
@@ -22,8 +25,6 @@ const tiers = [
   },
   {
     name: 'Premium',
-    // No price: this tier isn't self-serve, so quoting a figure here would
-    // promise a checkout that doesn't exist. Talk to us settles the price.
     tagline: 'Unlock more from the Portal',
     features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement'],
     cta: 'Upgrade to Premium',
@@ -34,8 +35,7 @@ const tiers = [
   },
   {
     name: 'Enterprise',
-    price: 'Custom',
-    note: 'Talk to us',
+    tagline: 'Custom — talk to us',
     features: ['Multi-user accounts', 'API access', 'White-label reporting', 'SLA guarantee', 'Dedicated support', 'Retainer agreement'],
     cta: 'Contact sales',
     interest: 'AI Manager Portal — Enterprise plan',
@@ -111,14 +111,7 @@ export default function Portal() {
                 }`}
               >
                 <div className="text-sm font-semibold uppercase tracking-wider text-cyan-glow">{t.name}</div>
-                {t.price ? (
-                  <div className="mt-3 flex items-end gap-1.5">
-                    <span className="font-display text-4xl font-700 text-white">{t.price}</span>
-                    <span className="mb-1.5 text-sm text-slate-400">{t.note}</span>
-                  </div>
-                ) : (
-                  <div className="mt-3 font-display text-xl font-700 text-white">{t.tagline}</div>
-                )}
+                <div className="mt-3 font-display text-xl font-700 text-white">{t.tagline}</div>
                 <ul className="mt-6 space-y-3">
                   {t.features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-sm text-slate-300">
