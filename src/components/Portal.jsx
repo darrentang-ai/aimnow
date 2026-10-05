@@ -11,8 +11,7 @@ const steps = [
 const tiers = [
   {
     name: 'Free',
-    price: '€0',
-    note: 'Start exploring',
+    tagline: 'Start exploring',
     features: ['Discovery call', 'View projects', 'Post one project', 'Notified when bids arrive', 'Community support'],
     cta: 'Create free account',
     // No `interest`: this tier routes into the app rather than the contact
@@ -23,10 +22,11 @@ const tiers = [
   },
   {
     name: 'Premium',
-    price: '€49',
-    note: 'per month',
-    features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement', 'Save 20% billed annually (€39/month)'],
-    cta: 'Start Premium plan',
+    // No price: this tier isn't self-serve, so quoting a figure here would
+    // promise a checkout that doesn't exist. Talk to us settles the price.
+    tagline: 'Unlock more from the Portal',
+    features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement'],
+    cta: 'Upgrade to Premium',
     interest: 'AI Manager Portal — Premium plan',
     href: '#contact',
     plan: 'premium', // Tracked — see trackPlanClick.
@@ -111,10 +111,14 @@ export default function Portal() {
                 }`}
               >
                 <div className="text-sm font-semibold uppercase tracking-wider text-cyan-glow">{t.name}</div>
-                <div className="mt-3 flex items-end gap-1.5">
-                  <span className="font-display text-4xl font-700 text-white">{t.price}</span>
-                  <span className="mb-1.5 text-sm text-slate-400">{t.note}</span>
-                </div>
+                {t.price ? (
+                  <div className="mt-3 flex items-end gap-1.5">
+                    <span className="font-display text-4xl font-700 text-white">{t.price}</span>
+                    <span className="mb-1.5 text-sm text-slate-400">{t.note}</span>
+                  </div>
+                ) : (
+                  <div className="mt-3 font-display text-xl font-700 text-white">{t.tagline}</div>
+                )}
                 <ul className="mt-6 space-y-3">
                   {t.features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-sm text-slate-300">
