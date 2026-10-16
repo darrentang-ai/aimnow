@@ -104,9 +104,13 @@ export default function SignIn() {
       setError('Choose whether you’re signing up as a business or an AI Manager.')
       return
     }
-    // Mirrors the mandatory marker on the field below — this is the one that
+    // Mirrors the mandatory markers on the fields below — this is what
     // actually stops the request, since a required attribute only guards a
     // real browser submit, not this handler.
+    if (!fullName.trim()) {
+      setError('Enter your name.')
+      return
+    }
     if (signupAs === 'business' && !company.trim()) {
       setError('Enter your company name.')
       return
@@ -247,8 +251,14 @@ export default function SignIn() {
               placeholder={isManagerIntent ? 'you@example.com' : 'you@company.com'}
             />
           </Field>
-          <Field label="Your name" hint="Only used the first time you sign in.">
-            <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="input" placeholder="Jane Doe" />
+          <Field label="Your name" required hint="Only used the first time you sign in.">
+            <input
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="input"
+              placeholder="Jane Doe"
+            />
           </Field>
           {/* An AI Manager joins as an individual, not on behalf of a company.
               Required rather than optional: a profile with no company and no
