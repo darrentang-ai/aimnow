@@ -117,8 +117,12 @@ export default function PortalApp() {
   const dashboard =
     profile.role === 'admin' ? (
       <AdminDashboard userId={userId} />
-    ) : profile.role === 'manager' ? (
-      <ManagerDashboard userId={userId} />
+    ) : // An applicant gets the manager dashboard because that is where the
+    // certificates form lives, and submitting certificates is the whole of
+    // what they are here to do. The dashboard tells them they aren't in the
+    // network yet — it doesn't pretend they are.
+    profile.role === 'manager' || profile.role === 'applicant' ? (
+      <ManagerDashboard userId={userId} role={profile.role} />
     ) : (
       <BusinessDashboard userId={userId} plan={profile.plan} />
     )

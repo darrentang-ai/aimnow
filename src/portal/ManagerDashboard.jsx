@@ -298,9 +298,13 @@ function PersonalProjects({ userId, items, onSaved }) {
   )
 }
 
-export default function ManagerDashboard({ userId }) {
+export default function ManagerDashboard({ userId, role = 'manager' }) {
   const [projects, setProjects] = useState(null)
   const [error, setError] = useState('')
+  // An applicant is here for the certificates form below and nothing else —
+  // they can't be assigned work until an admin has checked two of them, so
+  // "Assigned to you" would be an empty promise at the top of their screen.
+  const isApplicant = role === 'applicant'
 
   useEffect(() => {
     let cancelled = false
@@ -320,12 +324,23 @@ export default function ManagerDashboard({ userId }) {
 
   return (
     <>
-      <PageHead title="Assigned to you" sub="Projects AIM Now has matched you with." />
+      <PageHead
+        title={isApplicant ? 'Your application' : 'Assigned to you'}
+        sub={
+          isApplicant
+            ? "Add your AI certificates below. We check each link ourselves, and once two are approved you join the network and can be matched with projects."
+            : 'Projects AIM Now has matched you with.'
+        }
+      />
       {error && <Alert>{error}</Alert>}
       {!error && projects === null && <p className="text-sm text-slate-400">Loading…</p>}
-      {/* No notification exists, so don't promise one — a manager who trusts
-          this would simply never come back. */}
-      {projects?.length === 0 && <Empty>Nothing assigned yet. Anything matched to you will appear here.</Empty>}
+      {/* An applicant has no assignments by definition, so the empty state
+          would say nothing they don't already know from the heading. */}
+      {!isApplicant && projects?.length === 0 && (
+        // No notification exists, so don't promise one — a manager who trusts
+        // this would simply never come back.
+        <Empty>Nothing assigned yet. Anything matched to you will appear here.</Empty>
+      )}
       {projects?.length > 0 && (
         <div className="grid gap-5 lg:grid-cols-2">
           {projects.map((p) => (

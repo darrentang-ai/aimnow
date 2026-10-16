@@ -5,7 +5,19 @@
 -- Afterwards, promote yourself to admin with the statement at the bottom.
 -- =============================================================================
 
-create type user_role as enum ('business', 'manager', 'admin');
+-- 'applicant' sits between business and manager: someone who has asked to join
+-- the network but hasn't been vetted. It exists because the two states it used
+-- to be squeezed into were both wrong. Left as 'business' they land on the
+-- business dashboard, which has no certificates form — so they cannot do the
+-- one thing sign-up tells them to do. Promoted straight to 'manager' they
+-- become visible to every signed-in user through profiles_select, before
+-- anyone has checked a single credential.
+--
+-- It grants nothing: not publicly listed, not assignable (assign_project
+-- requires 'manager'), no wider read than a business has. All it unlocks is
+-- the manager dashboard, and with it the ability to submit certificates for
+-- review.
+create type user_role as enum ('business', 'manager', 'admin', 'applicant');
 create type project_status as enum ('open', 'assigned', 'in_progress', 'completed', 'cancelled');
 create type assignment_status as enum ('active', 'completed', 'cancelled');
 
@@ -461,24 +473,33 @@ create trigger projects_enforce_limit
 
 -- Every auth user gets a profile.
 --
--- `role` is NOT read from the signup metadata and never should be: that
--- metadata is whatever the browser sent, so honouring it would let anyone sign
--- up as an admin and read every project in the system. Their stated intent is
--- recorded in signup_as for an admin to act on; the role itself stays at the
--- column default of 'business' until someone grants it.
+-- The metadata is whatever the browser sent, so it can never grant anything:
+-- honouring a claim of 'admin' or 'manager' would let anyone read every
+-- project in the system, or list themselves as vetted. It is read here for two
+-- things only — the name and company they typed, and whether they said they
+-- were applying to build.
+--
+-- 'applicant' is a role the browser may ask for because it confers nothing
+-- (see the enum at the top of this file). Without it a new applicant would sit
+-- at 'business' and never find the certificates form, which is the next thing
+-- sign-up tells them to do. 'manager' remains an admin's decision, made after
+-- those certificates have been opened and checked.
 create or replace function handle_new_user()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_wants_manager boolean := new.raw_user_meta_data->>'signup_as' = 'manager';
 begin
-  insert into profiles (id, full_name, company, signup_as)
+  insert into profiles (id, full_name, company, signup_as, role)
   values (
     new.id,
     nullif(new.raw_user_meta_data->>'full_name', ''),
     nullif(new.raw_user_meta_data->>'company', ''),
-    case when new.raw_user_meta_data->>'signup_as' = 'manager' then 'manager' else 'business' end
+    case when v_wants_manager then 'manager' else 'business' end,
+    case when v_wants_manager then 'applicant' else 'business' end::user_role
   );
   return new;
 end

@@ -20,7 +20,11 @@ import ProjectCard from './ProjectCard'
 import Thread from './Thread'
 import { Alert, Empty, PageHead } from './ui'
 
-const ROLES = ['business', 'manager', 'admin']
+// 'applicant' sits next to 'business' deliberately: it is the state someone is
+// in before you have checked anything, and moving them to 'manager' is the
+// decision that puts them in front of businesses. See the user_role enum in
+// schema.sql.
+const ROLES = ['business', 'applicant', 'manager', 'admin']
 const NEW_FOR_MS = 7 * 24 * 60 * 60 * 1000
 
 const NEXT_STATUS = {
@@ -175,11 +179,17 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, onDone, onThreadRead 
               New
             </span>
           )}
-          {/* They asked to be a manager and haven't been granted it — this is
-              the queue of applications, and nothing else would show it. */}
-          {person.signup_as === 'manager' && person.role === 'business' && (
+          {/* The application queue. Two ways in, because signup_as only
+              records what someone picked at the time: new applicants arrive as
+              'applicant', and anyone you move there by hand — someone who
+              picked "a business" by mistake, or signed up before the option
+              existed — shows up the same way. */}
+          {(person.role === 'applicant' ||
+            (person.signup_as === 'manager' && person.role === 'business')) && (
             <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
-              Applied as manager
+              {person.role === 'applicant'
+                ? `Applicant · ${approvedCount(person.certificates)}/${MIN_CERTIFICATES} approved`
+                : 'Applied as manager'}
             </span>
           )}
           {/* Somebody is waiting on a reply. Counts only their messages, so it
@@ -379,6 +389,10 @@ function People({ currentUserId, onChanged }) {
   // open.
   const waitingCount = Object.values(unreadByPerson).filter((n) => n > 0).length
 
+  // The queue that actually needs working through. Without this you are
+  // scanning 80-odd rows for amber badges.
+  const applicantCount = (people ?? []).filter((p) => p.role === 'applicant').length
+
   return (
     <section className="mb-10">
       <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">
@@ -386,6 +400,11 @@ function People({ currentUserId, onChanged }) {
         {newCount > 0 && <span className="ml-2 normal-case tracking-normal text-slate-400">{newCount} new this week</span>}
         {/* The whole point of a badge is not having to open every row to find
             the one that needs answering, so the count is surfaced up here too. */}
+        {applicantCount > 0 && (
+          <span className="ml-2 normal-case tracking-normal text-amber-300">
+            · {applicantCount} {applicantCount === 1 ? 'applicant' : 'applicants'} to review
+          </span>
+        )}
         {waitingCount > 0 && (
           <span className="ml-2 normal-case tracking-normal text-cyan-glow">
             · {waitingCount} waiting on a reply
