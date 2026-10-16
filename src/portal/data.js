@@ -32,12 +32,41 @@ export async function loadProjects({ ownerId } = {}) {
     managers = data ?? []
   }
 
+  // Skipped when `ownerId` is set — that's a business viewing its own
+  // projects, which never shows the owner, so there's nothing to resolve.
+  //
+  // Best-effort otherwise: profiles_select only lets an admin (or the owner
+  // themselves) read a business's profile — a manager fetching someone else's
+  // owner row gets nothing back, not an error. admin_list_people() is the only
+  // way at an email (it lives in auth.users, not profiles), and is itself
+  // admin-gated, returning nothing for a manager rather than failing. Either
+  // way, ProjectCard falls back to the raw id when a project has no matching
+  // entry here, so a non-admin viewer degrades quietly rather than breaking.
+  let owners = []
+  let emailById = {}
+  if (!ownerId) {
+    const ownerIds = [...new Set(projects.map((p) => p.owner_id))]
+    const [{ data: ownerData }, { data: people }] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, company').in('id', ownerIds),
+      supabase.rpc('admin_list_people'),
+    ])
+    owners = ownerData ?? []
+    emailById = Object.fromEntries((people ?? []).map((p) => [p.id, p.email]))
+  }
+
   const managerById = Object.fromEntries(managers.map((m) => [m.id, m]))
+  const ownerById = Object.fromEntries(owners.map((o) => [o.id, { ...o, email: emailById[o.id] }]))
   const byProject = Object.fromEntries(
     (assignments ?? []).map((a) => [a.project_id, { ...a, manager: managerById[a.manager_id] ?? null }])
   )
 
-  return { projects: projects.map((p) => ({ ...p, assignment: byProject[p.id] ?? null })) }
+  return {
+    projects: projects.map((p) => ({
+      ...p,
+      assignment: byProject[p.id] ?? null,
+      owner: ownerById[p.owner_id] ?? null,
+    })),
+  }
 }
 
 // How many projects a plan may have open at once. Mirrors
@@ -219,4 +248,14 @@ export function formatDate(iso) {
 export function managerLabel(manager) {
   if (!manager) return 'Unassigned'
   return manager.company ? `${manager.full_name ?? 'AI Manager'} · ${manager.company}` : manager.full_name ?? 'AI Manager'
+}
+
+// `owner` is null both when a project genuinely has no profile (shouldn't
+// happen) and when RLS silently withheld it from a non-admin viewer — see the
+// comment in loadProjects(). Either way, falling back to the id is better
+// than showing nothing.
+export function ownerLabel(owner, ownerId) {
+  if (!owner) return `${ownerId.slice(0, 8)}…`
+  const name = owner.full_name || `${ownerId.slice(0, 8)}…`
+  return owner.company ? `${name} · ${owner.company}` : name
 }

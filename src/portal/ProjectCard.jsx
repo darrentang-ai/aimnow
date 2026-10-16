@@ -1,4 +1,4 @@
-import { formatDate, managerLabel } from './data'
+import { formatDate, managerLabel, ownerLabel } from './data'
 import { StatusBadge } from './ui'
 
 const approvedCertificates = (manager) =>
@@ -31,7 +31,10 @@ export default function ProjectCard({ project, showOwner = false, children }) {
         {showOwner && (
           <div>
             <dt className="inline font-semibold uppercase tracking-wide">Owner</dt>{' '}
-            <dd className="inline text-slate-300">{project.owner_id.slice(0, 8)}…</dd>
+            <dd className="inline text-slate-300">{ownerLabel(project.owner, project.owner_id)}</dd>
+            {/* Own line, not appended to the label above — email is the one
+                field here long enough to make that line wrap awkwardly. */}
+            {project.owner?.email && <dd className="block text-slate-500">{project.owner.email}</dd>}
           </div>
         )}
       </dl>
