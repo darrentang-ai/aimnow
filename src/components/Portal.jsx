@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Reveal, SectionHead } from './ui'
-import { trackPlanClick } from '../lib/analytics'
+import { trackManagerSignupClick, trackPlanClick } from '../lib/analytics'
 
 const steps = [
   { n: '01', title: 'Create a free account', desc: 'Freemium access — describe your business and the outcome you need.' },
@@ -127,6 +127,27 @@ export default function Portal() {
             </Reveal>
           ))}
         </div>
+
+        {/* The three cards above are all a business's options — this is the
+            only route into the Portal for the other side of it. Previously
+            that path existed only as a footer link, easy to never see. */}
+        <Reveal delay={tiers.length * 0.08}>
+          <div className="mt-6 flex flex-col items-center justify-between gap-5 rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-center sm:flex-row sm:text-left">
+            <div>
+              <h4 className="font-display text-lg font-600 text-white">Are you already an AI specialist?</h4>
+              <p className="mt-1 text-sm text-slate-400">
+                Join our network, get matched with businesses, and get hired for the work.
+              </p>
+            </div>
+            <Link
+              to="/portal?as=manager"
+              onClick={trackManagerSignupClick}
+              className="btn-ghost shrink-0 whitespace-nowrap"
+            >
+              Sign up as an AI Manager
+            </Link>
+          </div>
+        </Reveal>
       </div>
     </section>
   )

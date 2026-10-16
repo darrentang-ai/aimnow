@@ -33,6 +33,13 @@ export function trackPlanClick(plan) {
   send(`portal_${plan}_plan_click`)
 }
 
+// Separate from trackPlanClick: this isn't a plan a business buys into, it's
+// someone applying to join the network on the other side of the Portal.
+export function trackManagerSignupClick() {
+  lastCta = 'become_manager'
+  send('become_manager_click')
+}
+
 // `generate_lead` is a GA4 recommended event name, so it drops into conversion
 // reporting without custom setup. Mark it as a key event in Admin → Events.
 export function trackLead(interest) {
