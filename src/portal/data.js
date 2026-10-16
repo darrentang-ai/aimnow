@@ -199,6 +199,70 @@ export async function setProfilePlan(profileId, plan) {
 
 export const PLANS = ['free', 'premium', 'enterprise']
 
+// Messages -------------------------------------------------------------------
+//
+// A thread is just a person_id — see the messages table in schema.sql. The
+// person sees their own thread; an admin sees anyone's.
+
+export async function loadMessages(personId) {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, sender_id, from_admin, body, read_at, created_at')
+    .eq('person_id', personId)
+    .order('created_at')
+  return { messages: data ?? [], error }
+}
+
+export async function sendMessage({ personId, senderId, body }) {
+  const trimmed = body.trim()
+  if (!trimmed) return { error: { message: 'Write a message first.' } }
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({ person_id: personId, sender_id: senderId, body: trimmed })
+    .select('id, sender_id, from_admin, body, read_at, created_at')
+  if (error) return { error }
+  // messages_insert refuses a forged sender with no error and no rows.
+  if (!data?.length) {
+    return { error: { message: 'Nothing was sent. Check you are still signed in.' } }
+  }
+  return { message: data[0] }
+}
+
+// Clears whichever direction the caller is the recipient of — the function
+// works that out from auth.uid(), so there's nothing to pass but the thread.
+export async function markMessagesRead(personId) {
+  return supabase.rpc('mark_messages_read', { p_person_id: personId })
+}
+
+// For the person's own badge: how many unanswered messages AIM Now has sent.
+export async function countUnreadForPerson(personId) {
+  const { count, error } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('person_id', personId)
+    .eq('from_admin', true)
+    .is('read_at', null)
+  return { unread: count ?? 0, error }
+}
+
+// For the admin list: which people are waiting on a reply. Only ids come back,
+// never bodies — this feeds a dot on a row, and the thread is loaded on open.
+export async function loadUnreadByPerson() {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('person_id')
+    .eq('from_admin', false)
+    .is('read_at', null)
+  if (error) return { unreadByPerson: {}, error }
+
+  const unreadByPerson = {}
+  for (const { person_id: id } of data ?? []) {
+    unreadByPerson[id] = (unreadByPerson[id] ?? 0) + 1
+  }
+  return { unreadByPerson }
+}
+
 export async function loadAchievements(userId) {
   const { data, error } = await supabase
     .from('profiles')

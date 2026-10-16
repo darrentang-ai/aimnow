@@ -8,6 +8,7 @@ import {
   loadManagers,
   loadPeople,
   loadProjects,
+  loadUnreadByPerson,
   MIN_CERTIFICATES,
   PLANS,
   setCertificateApproval,
@@ -16,6 +17,7 @@ import {
   setProjectStatus,
 } from './data'
 import ProjectCard from './ProjectCard'
+import Thread from './Thread'
 import { Alert, Empty, PageHead } from './ui'
 
 const ROLES = ['business', 'manager', 'admin']
@@ -130,9 +132,10 @@ function AssignControls({ project, managers, onDone }) {
   )
 }
 
-function PersonRow({ person, isSelf, onDone }) {
+function PersonRow({ person, isSelf, viewerId, unread = 0, onDone, onThreadRead }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [messaging, setMessaging] = useState(false)
   const isNew = Date.now() - new Date(person.created_at).getTime() < NEW_FOR_MS
 
   const change = async (role) => {
@@ -177,6 +180,13 @@ function PersonRow({ person, isSelf, onDone }) {
           {person.signup_as === 'manager' && person.role === 'business' && (
             <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
               Applied as manager
+            </span>
+          )}
+          {/* Somebody is waiting on a reply. Counts only their messages, so it
+              never lights up for an admin's own unanswered one. */}
+          {unread > 0 && (
+            <span className="shrink-0 rounded-full border border-cyan-glow/40 bg-cyan-glow/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-glow">
+              {unread} new {unread === 1 ? 'message' : 'messages'}
             </span>
           )}
         </p>
@@ -293,6 +303,31 @@ function PersonRow({ person, isSelf, onDone }) {
         </div>
       )}
 
+      {/* Messaging your own row would be talking to yourself — and the thread
+          model has no second side for it, since person_id would equal the
+          admin sending. */}
+      {!isSelf && (
+        <div className="w-full border-t border-white/5 pt-2.5">
+          <button
+            onClick={() => setMessaging((open) => !open)}
+            className="text-xs font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
+          >
+            {messaging ? 'Hide conversation' : 'Message'}
+          </button>
+          {messaging && (
+            <div className="mt-3">
+              <Thread
+                personId={person.id}
+                viewerId={viewerId}
+                isAdmin
+                personName={person.full_name || person.email}
+                onRead={onThreadRead}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {error && (
         <div className="w-full">
           <Alert>{error}</Alert>
@@ -306,16 +341,31 @@ function PersonRow({ person, isSelf, onDone }) {
 // promoting an AI Manager a UI action rather than a hand-written UPDATE.
 function People({ currentUserId, onChanged }) {
   const [people, setPeople] = useState(null)
+  const [unreadByPerson, setUnreadByPerson] = useState({})
   const [error, setError] = useState('')
 
   const refresh = useCallback(async () => {
-    const { people, error } = await loadPeople()
+    const [{ people, error }, { unreadByPerson }] = await Promise.all([
+      loadPeople(),
+      // Deliberately ignoring this error: an unlit badge is a far smaller
+      // problem than refusing to render the People list over it.
+      loadUnreadByPerson(),
+    ])
     if (error) setError(error.message)
     else setPeople(people)
+    setUnreadByPerson(unreadByPerson)
     // Approving a certificate or granting a role changes who can be assigned,
     // so the picker above has to reload too — it holds its own copy.
     onChanged?.()
   }, [onChanged])
+
+  // Clearing a badge shouldn't reload the whole list and collapse the thread
+  // the admin is reading, so it only touches the count it knows changed.
+  const clearUnread = useCallback((personId) => {
+    // Returning prev unchanged when it's already clear keeps this from
+    // re-rendering the list for nothing.
+    setUnreadByPerson((prev) => (prev[personId] ? { ...prev, [personId]: 0 } : prev))
+  }, [])
 
   useEffect(() => {
     refresh()
@@ -325,11 +375,22 @@ function People({ currentUserId, onChanged }) {
     (p) => Date.now() - new Date(p.created_at).getTime() < NEW_FOR_MS
   ).length
 
+  // People, not messages: five from one person is still one conversation to
+  // open.
+  const waitingCount = Object.values(unreadByPerson).filter((n) => n > 0).length
+
   return (
     <section className="mb-10">
       <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">
         People <span className="text-slate-500">({people?.length ?? 0})</span>
         {newCount > 0 && <span className="ml-2 normal-case tracking-normal text-slate-400">{newCount} new this week</span>}
+        {/* The whole point of a badge is not having to open every row to find
+            the one that needs answering, so the count is surfaced up here too. */}
+        {waitingCount > 0 && (
+          <span className="ml-2 normal-case tracking-normal text-cyan-glow">
+            · {waitingCount} waiting on a reply
+          </span>
+        )}
       </h2>
       {error && <Alert>{error}</Alert>}
       {!error && people === null && <p className="text-sm text-slate-400">Loading…</p>}
@@ -338,7 +399,15 @@ function People({ currentUserId, onChanged }) {
         <div className="card">
           <ul>
             {people.map((p) => (
-              <PersonRow key={p.id} person={p} isSelf={p.id === currentUserId} onDone={refresh} />
+              <PersonRow
+                key={p.id}
+                person={p}
+                isSelf={p.id === currentUserId}
+                viewerId={currentUserId}
+                unread={unreadByPerson[p.id] ?? 0}
+                onDone={refresh}
+                onThreadRead={() => clearUnread(p.id)}
+              />
             ))}
           </ul>
         </div>

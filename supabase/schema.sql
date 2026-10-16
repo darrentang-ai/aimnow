@@ -77,6 +77,37 @@ create unique index assignments_one_active_per_project
 
 create index assignments_manager_idx on assignments (manager_id);
 
+-- Messages between AIM Now and one person. There is no threads table: a
+-- conversation IS a person_id, because every thread has the same two sides —
+-- that person, and whichever admin happens to answer. Admins are deliberately
+-- interchangeable here, so a handover doesn't orphan a conversation.
+--
+-- Project-scoped threads were the alternative. They read better in context,
+-- but they can't carry the conversation that actually needed having — chasing
+-- a manager about their certificates, before any project exists.
+create table messages (
+  id         uuid primary key default gen_random_uuid(),
+  -- The non-admin side of the thread, and the thread's identity.
+  person_id  uuid not null references profiles(id) on delete cascade,
+  sender_id  uuid not null references profiles(id) on delete cascade,
+  -- Derived from the two above by set_message_direction(), never trusted from
+  -- the client. Stored rather than computed on read because PostgREST can't
+  -- filter one column against another, and every unread count needs exactly
+  -- that comparison.
+  from_admin boolean not null default false,
+  body       text not null check (btrim(body) <> ''),
+  -- Set by mark_messages_read() when the other side opens the thread. Null
+  -- means unread; there is no per-admin read state, since any admin reading it
+  -- counts as AIM Now having read it.
+  read_at    timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index messages_person_idx on messages (person_id, created_at);
+
+-- Serves both unread badges: the person's own, and the admin list's.
+create index messages_unread_idx on messages (person_id, from_admin) where read_at is null;
+
 -- -----------------------------------------------------------------------------
 -- Certificates
 --
@@ -319,6 +350,59 @@ create trigger projects_guard_status
   before update on projects
   for each row execute function guard_status_change();
 
+-- from_admin is what both unread badges filter on, so it can't be a value the
+-- sender supplies. It is fully determined by the other two columns: anyone
+-- writing into a thread that isn't their own is, by the insert policy, an
+-- admin. Recomputed on update too, though nothing is allowed to update a
+-- message's body — see the lack of an update policy.
+create or replace function set_message_direction()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.from_admin := new.sender_id is distinct from new.person_id;
+  return new;
+end
+$$;
+
+create trigger messages_set_direction
+  before insert or update on messages
+  for each row execute function set_message_direction();
+
+-- Marking read is the only legitimate change to an existing message, and it
+-- belongs to whichever side didn't write it. There is deliberately no update
+-- policy on messages, so this function is the only route — which also means a
+-- body can never be edited after the fact.
+create or replace function mark_messages_read(p_person_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() = p_person_id then
+    -- The person is reading what AIM Now sent them.
+    update messages
+       set read_at = now()
+     where person_id = p_person_id
+       and from_admin
+       and read_at is null;
+  elsif is_admin() then
+    -- An admin is reading what the person sent. Any admin clears it: they
+    -- answer as one voice, so a second admin shouldn't see it as unread.
+    update messages
+       set read_at = now()
+     where person_id = p_person_id
+       and not from_admin
+       and read_at is null;
+  else
+    raise exception 'Not your conversation';
+  end if;
+end
+$$;
+
+grant execute on function mark_messages_read(uuid) to authenticated;
+
 -- The free plan is one project. Enforced here rather than in an RLS `with
 -- check` clause for the message: a policy refusal surfaces as "new row
 -- violates row-level security policy", which tells a business nothing about
@@ -506,6 +590,11 @@ as $$
    order by p.created_at desc
 $$;
 
+-- Existing installs, for messaging: create the `messages` table above, then
+-- set_message_direction() and mark_messages_read(), then its three policies
+-- and the grant — all of them, since a table with RLS on and no policy is a
+-- table nobody can read. The table is new, so there is nothing to backfill.
+--
 -- Existing installs, for the project limit:
 --
 --   alter table profiles
@@ -545,6 +634,7 @@ grant execute on function admin_list_people() to authenticated;
 alter table profiles    enable row level security;
 alter table projects    enable row level security;
 alter table assignments enable row level security;
+alter table messages    enable row level security;
 
 -- profiles ---------------------------------------------------------------------
 
@@ -605,12 +695,33 @@ create policy assignments_insert_admin on assignments
 create policy assignments_update_admin on assignments
   for update to authenticated using (is_admin()) with check (is_admin());
 
+-- messages ---------------------------------------------------------------------
+
+create policy messages_select on messages
+  for select to authenticated
+  using (person_id = auth.uid() or is_admin());
+
+-- One clause covers both directions: you always send as yourself, into either
+-- your own thread or — if you're an admin — anyone's. sender_id = auth.uid()
+-- is the part that matters, without it an admin could post a message
+-- attributed to the person, or a person could forge one from AIM Now.
+create policy messages_insert on messages
+  for insert to authenticated
+  with check (sender_id = auth.uid() and (person_id = auth.uid() or is_admin()));
+
+-- No update policy at all: read_at moves only through mark_messages_read(),
+-- and a sent message's body is final.
+create policy messages_delete_admin on messages
+  for delete to authenticated using (is_admin());
+
 -- -----------------------------------------------------------------------------
 -- Grants. RLS is the gate; these just make the tables reachable at all.
 -- -----------------------------------------------------------------------------
 
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on profiles, projects, assignments to authenticated;
+-- No update: see messages_select above and mark_messages_read().
+grant select, insert, delete on messages to authenticated;
 grant execute on function assign_project(uuid, uuid, text) to authenticated;
 grant execute on function is_admin() to authenticated;
 

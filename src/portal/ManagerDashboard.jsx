@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { isVerificationLink } from './certificates'
 import { loadAchievements, loadProjects, saveCertificates, savePersonalProjects } from './data'
+import MessagesSection from './MessagesSection'
 import ProjectCard from './ProjectCard'
 import { Alert, Empty, PageHead } from './ui'
 
@@ -335,6 +336,8 @@ export default function ManagerDashboard({ userId }) {
 
       {/* Only once the project list has loaded, so the count isn't briefly 0. */}
       {projects !== null && <Achievements userId={userId} completedCount={completedCount} />}
+
+      <MessagesSection userId={userId} />
     </>
   )
 }

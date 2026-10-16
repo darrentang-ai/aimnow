@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { atProjectLimit, loadProjects } from './data'
+import MessagesSection from './MessagesSection'
 import ProjectCard from './ProjectCard'
 import { Alert, Empty, PageHead, UPGRADE_HREF } from './ui'
 
@@ -59,6 +60,7 @@ export default function BusinessDashboard({ userId, plan }) {
           ))}
         </div>
       )}
+      <MessagesSection userId={userId} />
     </>
   )
 }
