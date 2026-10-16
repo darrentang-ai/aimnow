@@ -7,10 +7,44 @@ export default function Hero() {
     <section id="top" className="relative isolate overflow-hidden pt-28 pb-20 md:pt-40 md:pb-28">
       <div className="container-x relative">
         <div className="mx-auto max-w-4xl text-center">
+          {/* Announcement, above everything else on the page. Not a bar above
+              the navbar: that header is `fixed top-0`, so anything in normal
+              flow above it renders underneath it. This sits at the top of the
+              hero's own content instead, which is the first thing a reader
+              actually sees.
+
+              Scoped carefully to what the feature is — a thread between an
+              account holder and AIM Now. It is NOT business-to-manager chat,
+              which the Premium card still advertises and the Portal still
+              cannot do. It also promises no reply time, since nothing notifies
+              an admin until they next sign in. */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8 flex justify-center"
+          >
+            <Link
+              to="/portal"
+              className="group inline-flex max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-full border border-cyan-glow/25 bg-cyan-glow/5 px-4 py-1.5 text-xs transition-colors hover:border-cyan-glow/50 hover:bg-cyan-glow/10 sm:text-sm"
+            >
+              <span className="font-semibold uppercase tracking-wider text-cyan-glow">New</span>
+              {/* Arrow inside the text rather than beside it: as a sibling flex
+                  item it wrapped onto a line of its own once the sentence broke
+                  at phone width. */}
+              <span className="text-slate-300">
+                Message AIM Now from your dashboard{' '}
+                <svg viewBox="0 0 24 24" className="inline h-3.5 w-3.5 shrink-0 align-[-0.1em] text-cyan-glow transition-transform group-hover:translate-x-0.5" fill="none">
+                  <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </Link>
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
           >
             <Eyebrow center size="lg">AI Management and Consultancy</Eyebrow>
           </motion.div>
