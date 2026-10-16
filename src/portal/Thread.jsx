@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { loadMessages, markMessagesRead, sendMessage } from './data'
+import { deleteConversation, loadMessages, markMessagesRead, sendMessage } from './data'
 import { Alert } from './ui'
 
 // One conversation between AIM Now and one person. Both sides render this same
@@ -10,6 +10,8 @@ export default function Thread({ personId, viewerId, isAdmin, personName, onRead
   const [messages, setMessages] = useState(null)
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [error, setError] = useState('')
   const endRef = useRef(null)
 
@@ -63,6 +65,22 @@ export default function Thread({ personId, viewerId, isAdmin, personName, onRead
     // returned the row the database actually stored.
     setMessages((prev) => [...(prev ?? []), message])
     setBody('')
+  }
+
+  const onDelete = async () => {
+    setDeleting(true)
+    setError('')
+    const { error } = await deleteConversation(personId)
+    setDeleting(false)
+    if (error) {
+      setError(error.message)
+      return
+    }
+    setMessages([])
+    setConfirmingDelete(false)
+    // Anything the person had sent is gone, so a badge still counting it would
+    // point at a thread that no longer has it.
+    onReadRef.current?.()
   }
 
   return (
@@ -128,6 +146,44 @@ export default function Thread({ personId, viewerId, isAdmin, personName, onRead
           {sending ? 'Sending…' : 'Send'}
         </button>
       </form>
+
+      {/* Admin only, per messages_delete_admin — and only with something to
+          delete, so it isn't offered on an empty thread. Two-step rather than
+          window.confirm, which some embedded browsers suppress outright: a
+          suppressed dialog would delete without asking. */}
+      {isAdmin && messages?.length > 0 && (
+        <div className="mt-3 border-t border-white/10 pt-2.5">
+          {confirmingDelete ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-slate-400">
+                {/* Said plainly, because it isn't obvious: there is no second
+                    copy, so this clears their dashboard as well as yours. */}
+                Delete this whole conversation for both sides? This cannot be undone.
+              </span>
+              <button
+                disabled={deleting}
+                onClick={onDelete}
+                className="rounded-full border border-red-400/40 bg-red-400/10 px-3.5 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-400/20 disabled:opacity-50"
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete'}
+              </button>
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                className="text-xs font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
+              >
+                Keep it
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              className="text-xs font-semibold text-slate-500 transition-colors hover:text-red-300"
+            >
+              Delete conversation
+            </button>
+          )}
+        </div>
+      )}
       {error && (
         <div className="mt-2">
           <Alert>{error}</Alert>

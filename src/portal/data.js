@@ -235,6 +235,25 @@ export async function markMessagesRead(personId) {
   return supabase.rpc('mark_messages_read', { p_person_id: personId })
 }
 
+// Admin-only, per messages_delete_admin. Deletes the whole thread for both
+// sides at once — there is no per-person copy of a message, so this removes it
+// from the person's dashboard too.
+export async function deleteConversation(personId) {
+  // Ask for the deleted ids back. A delete refused by row-level security
+  // reports no error at all — it simply affects nothing — so the returned rows
+  // are the only way to tell success from a silent permission failure.
+  const { data, error } = await supabase
+    .from('messages')
+    .delete()
+    .eq('person_id', personId)
+    .select('id')
+  if (error) return { error }
+  if (!data?.length) {
+    return { error: { message: 'Nothing was deleted. Check you are still signed in as an admin.' } }
+  }
+  return { deleted: data.length }
+}
+
 // For the person's own badge: how many unanswered messages AIM Now has sent.
 export async function countUnreadForPerson(personId) {
   const { count, error } = await supabase
