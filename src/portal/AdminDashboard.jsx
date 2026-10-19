@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   approvedCount,
   assignProject,
+  deletePerson,
   deleteProject,
   eligibleToAssign,
   formatDate,
   loadManagers,
   loadPeople,
+  loadPersonImpact,
   loadProjects,
   loadUnreadByPerson,
   MIN_CERTIFICATES,
@@ -31,6 +33,64 @@ const NEXT_STATUS = {
   assigned: [['in_progress', 'Mark in progress'], ['cancelled', 'Cancel']],
   in_progress: [['completed', 'Mark completed'], ['cancelled', 'Cancel']],
   open: [['cancelled', 'Cancel']],
+}
+
+// Someone who asked to join the network, by either route — see the badge in
+// PersonRow for why there are two.
+const isApplicant = (p) =>
+  p.role === 'applicant' || (p.signup_as === 'manager' && p.role === 'business')
+
+const PEOPLE_FILTERS = [
+  ['all', 'Everyone'],
+  ['applicants', 'Applicants'],
+  ['unread', 'Unread'],
+  ['manager', 'Managers'],
+  ['business', 'Businesses'],
+  // Who has actually used the Portal, as opposed to signing up and stopping.
+  // Derived from the projects already loaded for the queue above, so it costs
+  // no extra query.
+  ['posted', 'With projects'],
+]
+
+function matchesPerson(person, needle) {
+  if (!needle) return true
+  return [person.full_name, person.email, person.company]
+    .filter(Boolean)
+    .some((field) => field.toLowerCase().includes(needle))
+}
+
+function matchesProject(project, needle) {
+  if (!needle) return true
+  return [project.title, project.summary, project.owner?.full_name, project.owner?.company, project.owner?.email]
+    .filter(Boolean)
+    .some((field) => field.toLowerCase().includes(needle))
+}
+
+function SearchBox({ value, onChange, placeholder, resultCount, total }) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="relative min-w-[14rem] flex-1">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="input !py-2 !pl-9 !text-xs"
+          placeholder={placeholder}
+          // type="search" gives browsers their own clear button, which saves
+          // building one and matches what people already expect from a filter.
+          type="search"
+        />
+        <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" fill="none">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+          <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+      {value && (
+        <span className="text-xs text-slate-500">
+          {resultCount} of {total}
+        </span>
+      )}
+    </div>
+  )
 }
 
 function AssignControls({ project, managers, onDone }) {
@@ -139,8 +199,19 @@ function AssignControls({ project, managers, onDone }) {
 function PersonRow({ person, isSelf, viewerId, unread = 0, onDone, onThreadRead }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [messaging, setMessaging] = useState(false)
+  // Collapsed by default. With 80-odd people, a row that renders its
+  // certificates, personal projects and a message thread inline means four
+  // people fit on screen; the badges and the summary line below carry enough
+  // to decide whether this is the row worth opening.
+  const [open, setOpen] = useState(false)
+  // null until the confirmation is opened — the counts are fetched then, so a
+  // list of eighty rows doesn't ask the database what deleting each would cost.
+  const [impact, setImpact] = useState(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const isNew = Date.now() - new Date(person.created_at).getTime() < NEW_FOR_MS
+
+  const certificates = person.certificates ?? []
+  const personalProjects = person.personal_projects ?? []
 
   const change = async (role) => {
     setBusy(true)
@@ -169,163 +240,208 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, onDone, onThreadRead 
     else onDone()
   }
 
+  const askToDelete = async () => {
+    setConfirmingDelete(true)
+    setError('')
+    const { impact, error } = await loadPersonImpact(person.id)
+    // A failed lookup shouldn't block the delete — the confirmation just has
+    // to be vaguer about what goes, and the function checks permission again
+    // anyway.
+    if (error) setImpact(null)
+    else setImpact(impact)
+  }
+
+  const confirmDelete = async () => {
+    setBusy(true)
+    setError('')
+    const { error } = await deletePerson(person.id)
+    setBusy(false)
+    if (error) {
+      setError(error.message)
+      setConfirmingDelete(false)
+      return
+    }
+    // The row is gone, so there is nothing to update — reload the list.
+    onDone()
+  }
+
+  // What's behind the disclosure, said in one line, so opening a row is never
+  // a guess.
+  const summary = [
+    certificates.length &&
+      `${approvedCount(certificates)}/${certificates.length} certificate${certificates.length === 1 ? '' : 's'} approved`,
+    personalProjects.length && `${personalProjects.length} personal project${personalProjects.length === 1 ? '' : 's'}`,
+  ].filter(Boolean)
+
   return (
-    <li className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 py-3 first:border-t-0">
-      <div className="min-w-0 flex-1">
-        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
-          <span className="truncate">{person.full_name || 'No name given'}</span>
-          {isNew && (
-            <span className="shrink-0 rounded-full border border-cyan-glow/30 bg-cyan-glow/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-glow">
-              New
-            </span>
-          )}
-          {/* The application queue. Two ways in, because signup_as only
-              records what someone picked at the time: new applicants arrive as
-              'applicant', and anyone you move there by hand — someone who
-              picked "a business" by mistake, or signed up before the option
-              existed — shows up the same way. */}
-          {(person.role === 'applicant' ||
-            (person.signup_as === 'manager' && person.role === 'business')) && (
-            <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
-              {person.role === 'applicant'
-                ? `Applicant · ${approvedCount(person.certificates)}/${MIN_CERTIFICATES} approved`
-                : 'Applied as manager'}
-            </span>
-          )}
-          {/* Somebody is waiting on a reply. Counts only their messages, so it
-              never lights up for an admin's own unanswered one. */}
-          {unread > 0 && (
-            <span className="shrink-0 rounded-full border border-cyan-glow/40 bg-cyan-glow/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-glow">
-              {unread} new {unread === 1 ? 'message' : 'messages'}
-            </span>
-          )}
-        </p>
-        {/* Email is the only thing that tells two people with the same name
-            apart, so it sits directly under it. Absent on the fallback path. */}
-        {person.email && <p className="truncate text-xs text-slate-400">{person.email}</p>}
-        <p className="truncate text-xs text-slate-500">
-          {person.company || '—'} · joined {formatDate(person.created_at)}
-        </p>
+    <li className="border-t border-white/10 py-3 first:border-t-0">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {/* Only the identity block toggles. The role and plan selects sit
+            outside it — a click meant for a dropdown must never also collapse
+            the row out from under it. */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="group min-w-0 flex-1 text-left"
+        >
+          <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
+            <svg
+              viewBox="0 0 24 24"
+              className={`h-3 w-3 shrink-0 text-slate-500 transition-transform group-hover:text-cyan-glow ${open ? 'rotate-90' : ''}`}
+              fill="none"
+            >
+              <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="truncate group-hover:text-cyan-glow">{person.full_name || 'No name given'}</span>
+            {isNew && (
+              <span className="shrink-0 rounded-full border border-cyan-glow/30 bg-cyan-glow/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-glow">
+                New
+              </span>
+            )}
+            {/* The application queue. Two ways in, because signup_as only
+                records what someone picked at the time: new applicants arrive as
+                'applicant', and anyone you move there by hand — someone who
+                picked "a business" by mistake, or signed up before the option
+                existed — shows up the same way. */}
+            {isApplicant(person) && (
+              <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                {person.role === 'applicant'
+                  ? `Applicant · ${approvedCount(certificates)}/${MIN_CERTIFICATES} approved`
+                  : 'Applied as manager'}
+              </span>
+            )}
+            {/* Somebody is waiting on a reply. Counts only their messages, so it
+                never lights up for an admin's own unanswered one. */}
+            {unread > 0 && (
+              <span className="shrink-0 rounded-full border border-cyan-glow/40 bg-cyan-glow/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-glow">
+                {unread} new {unread === 1 ? 'message' : 'messages'}
+              </span>
+            )}
+          </p>
+          {/* Email is the only thing that tells two people with the same name
+              apart, so it sits directly under it. Absent on the fallback path. */}
+          {person.email && <p className="truncate pl-5 text-xs text-slate-400">{person.email}</p>}
+          <p className="truncate pl-5 text-xs text-slate-500">
+            {person.company || '—'} · joined {formatDate(person.created_at)}
+            {summary.length > 0 && <span className="text-slate-600"> · {summary.join(' · ')}</span>}
+          </p>
+        </button>
+
+        {/* Changing your own role here would drop your admin rights with no way
+            back in the UI, so your own row is read-only. */}
+        {isSelf ? (
+          <span className="text-xs font-semibold text-slate-400">{person.role} · you</span>
+        ) : (
+          <select
+            value={person.role}
+            disabled={busy}
+            onChange={(e) => change(e.target.value)}
+            className="input !w-auto !py-1.5 !text-xs disabled:opacity-50"
+          >
+            {ROLES.map((r) => (
+              <option key={r} value={r} className="bg-ink-800">
+                {r}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* The plan is what the project limit is read from — free is one project,
+            anything else is unlimited. Only shown for businesses, since managers
+            and admins post nothing and are never limited. */}
+        {person.role === 'business' && (
+          <select
+            value={person.plan ?? 'free'}
+            disabled={busy}
+            onChange={(e) => changePlan(e.target.value)}
+            title="Plan — free is capped at one project"
+            className="input !w-auto !py-1.5 !text-xs disabled:opacity-50"
+          >
+            {PLANS.map((p) => (
+              <option key={p} value={p} className="bg-ink-800">
+                {p}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
-      {/* Changing your own role here would drop your admin rights with no way
-          back in the UI, so your own row is read-only. */}
-      {isSelf ? (
-        <span className="text-xs font-semibold text-slate-400">{person.role} · you</span>
-      ) : (
-        <select
-          value={person.role}
-          disabled={busy}
-          onChange={(e) => change(e.target.value)}
-          className="input !w-auto !py-1.5 !text-xs disabled:opacity-50"
-        >
-          {ROLES.map((r) => (
-            <option key={r} value={r} className="bg-ink-800">
-              {r}
-            </option>
-          ))}
-        </select>
-      )}
-
-      {/* The plan is what the project limit is read from — free is one project,
-          anything else is unlimited. Only shown for businesses, since managers
-          and admins post nothing and are never limited. */}
-      {person.role === 'business' && (
-        <select
-          value={person.plan ?? 'free'}
-          disabled={busy}
-          onChange={(e) => changePlan(e.target.value)}
-          title="Plan — free is capped at one project"
-          className="input !w-auto !py-1.5 !text-xs disabled:opacity-50"
-        >
-          {PLANS.map((p) => (
-            <option key={p} value={p} className="bg-ink-800">
-              {p}
-            </option>
-          ))}
-        </select>
-      )}
-
-      {/* Approval is what makes "verified" mean anything, and it can only be
-          done by a person opening the link — nothing automated can confirm a
-          credential exists. */}
-      {person.certificates?.length > 0 && (
-        <ul className="w-full space-y-1.5 border-t border-white/5 pt-2.5">
-          {person.certificates.map((c) => (
-            <li key={c.url} className="flex flex-wrap items-center gap-2">
-              <a
-                href={c.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-w-0 items-center gap-1 text-xs text-slate-300 transition-colors hover:text-cyan-glow"
-              >
-                <span className="truncate">{c.name}</span>
-                <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none">
-                  <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-              <button
-                disabled={busy}
-                onClick={() => approve(c.url, !c.approved)}
-                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 ${
-                  c.approved
-                    ? 'border-cyan-glow/30 bg-cyan-glow/10 text-cyan-glow hover:border-white/20 hover:text-white'
-                    : 'border-white/15 bg-white/5 text-slate-400 hover:border-cyan-glow/40 hover:text-cyan-glow'
-                }`}
-              >
-                {c.approved ? 'Approved' : 'Approve'}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Self-reported, so presented more quietly than the certificates above
-          and labelled — there is nothing to verify these against. Useful when
-          deciding who to assign, which is why they are here at all. */}
-      {person.personal_projects?.length > 0 && (
-        <div className="w-full border-t border-white/5 pt-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-            Personal projects · self-reported
-          </p>
-          <ul className="mt-1.5 space-y-1.5">
-            {person.personal_projects.map((p, i) => (
-              <li key={`${p.title}-${i}`} className="text-xs">
-                {p.url ? (
+      {open && (
+        <div className="mt-3 space-y-3 pl-5">
+          {/* Approval is what makes "verified" mean anything, and it can only be
+              done by a person opening the link — nothing automated can confirm a
+              credential exists. */}
+          {certificates.length > 0 && (
+            <ul className="space-y-1.5 border-t border-white/5 pt-2.5">
+              {certificates.map((c) => (
+                <li key={c.url} className="flex flex-wrap items-center gap-2">
                   <a
-                    href={p.url}
+                    href={c.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
+                    className="inline-flex min-w-0 items-center gap-1 text-xs text-slate-300 transition-colors hover:text-cyan-glow"
                   >
-                    {p.title}
+                    <span className="truncate">{c.name}</span>
                     <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none">
                       <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </a>
-                ) : (
-                  <span className="font-semibold text-slate-300">{p.title}</span>
-                )}
-                {p.summary && <p className="mt-0.5 leading-relaxed text-slate-500">{p.summary}</p>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                  <button
+                    disabled={busy}
+                    onClick={() => approve(c.url, !c.approved)}
+                    className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 ${
+                      c.approved
+                        ? 'border-cyan-glow/30 bg-cyan-glow/10 text-cyan-glow hover:border-white/20 hover:text-white'
+                        : 'border-white/15 bg-white/5 text-slate-400 hover:border-cyan-glow/40 hover:text-cyan-glow'
+                    }`}
+                  >
+                    {c.approved ? 'Approved' : 'Approve'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
-      {/* Messaging your own row would be talking to yourself — and the thread
-          model has no second side for it, since person_id would equal the
-          admin sending. */}
-      {!isSelf && (
-        <div className="w-full border-t border-white/5 pt-2.5">
-          <button
-            onClick={() => setMessaging((open) => !open)}
-            className="text-xs font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
-          >
-            {messaging ? 'Hide conversation' : 'Message'}
-          </button>
-          {messaging && (
-            <div className="mt-3">
+          {/* Self-reported, so presented more quietly than the certificates above
+              and labelled — there is nothing to verify these against. Useful when
+              deciding who to assign, which is why they are here at all. */}
+          {personalProjects.length > 0 && (
+            <div className="border-t border-white/5 pt-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Personal projects · self-reported
+              </p>
+              <ul className="mt-1.5 space-y-1.5">
+                {personalProjects.map((p, i) => (
+                  <li key={`${p.title}-${i}`} className="text-xs">
+                    {p.url ? (
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-slate-300 transition-colors hover:text-cyan-glow"
+                      >
+                        {p.title}
+                        <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none">
+                          <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </a>
+                    ) : (
+                      <span className="font-semibold text-slate-300">{p.title}</span>
+                    )}
+                    {p.summary && <p className="mt-0.5 leading-relaxed text-slate-500">{p.summary}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Messaging your own row would be talking to yourself — and the thread
+              model has no second side for it, since person_id would equal the
+              admin sending. The thread only mounts once the row is open, so a
+              long People list isn't eighty threads loading at once. */}
+          {!isSelf && (
+            <div className="border-t border-white/5 pt-2.5">
               <Thread
                 personId={person.id}
                 viewerId={viewerId}
@@ -335,11 +451,63 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, onDone, onThreadRead 
               />
             </div>
           )}
+
+          {/* Inside the disclosure on purpose: deleting someone shouldn't be
+              one stray click away while scanning the list. Your own row has no
+              delete at all — admin_delete_person refuses it too, but the
+              screen shouldn't offer what the database will reject. */}
+          {!isSelf && (
+            <div className="border-t border-white/5 pt-2.5">
+              {confirmingDelete ? (
+                <div className="space-y-2">
+                  <p className="text-xs leading-relaxed text-slate-400">
+                    Delete <span className="font-semibold text-white">{person.full_name || person.email}</span>{' '}
+                    and everything attached?
+                    {impact && (
+                      <>
+                        {' '}
+                        That is{' '}
+                        <span className="text-red-300">
+                          {impact.projects} {impact.projects === 1 ? 'project' : 'projects'}, {impact.messages}{' '}
+                          {impact.messages === 1 ? 'message' : 'messages'} and {impact.assignments}{' '}
+                          {impact.assignments === 1 ? 'assignment' : 'assignments'}
+                        </span>
+                        .
+                      </>
+                    )}{' '}
+                    This cannot be undone. It does not stop the same email signing up again.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      disabled={busy}
+                      onClick={confirmDelete}
+                      className="rounded-full border border-red-400/40 bg-red-400/10 px-3.5 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-400/20 disabled:opacity-50"
+                    >
+                      {busy ? 'Deleting…' : 'Yes, delete this person'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmingDelete(false)}
+                      className="text-xs font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
+                    >
+                      Keep them
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={askToDelete}
+                  className="text-xs font-semibold text-slate-500 transition-colors hover:text-red-300"
+                >
+                  Delete person
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {error && (
-        <div className="w-full">
+        <div className="mt-2">
           <Alert>{error}</Alert>
         </div>
       )}
@@ -349,83 +517,101 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, onDone, onThreadRead 
 
 // Answers "has anyone signed up?" without a trip to the SQL editor, and makes
 // promoting an AI Manager a UI action rather than a hand-written UPDATE.
-function People({ currentUserId, onChanged }) {
-  const [people, setPeople] = useState(null)
-  const [unreadByPerson, setUnreadByPerson] = useState({})
-  const [error, setError] = useState('')
+//
+// Data comes from the dashboard above rather than being loaded here: the
+// worklist at the top of the page counts across people AND projects, so one
+// owner of both is simpler than two components reporting upward.
+function People({
+  people,
+  unreadByPerson,
+  projectOwnerIds,
+  currentUserId,
+  filter,
+  onFilter,
+  query,
+  onQuery,
+  onChanged,
+  onThreadRead,
+}) {
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return (people ?? []).filter((p) => {
+      if (!matchesPerson(p, needle)) return false
+      if (filter === 'all') return true
+      if (filter === 'applicants') return isApplicant(p)
+      if (filter === 'unread') return (unreadByPerson[p.id] ?? 0) > 0
+      if (filter === 'posted') return projectOwnerIds.has(p.id)
+      return p.role === filter
+    })
+  }, [people, unreadByPerson, projectOwnerIds, filter, query])
 
-  const refresh = useCallback(async () => {
-    const [{ people, error }, { unreadByPerson }] = await Promise.all([
-      loadPeople(),
-      // Deliberately ignoring this error: an unlit badge is a far smaller
-      // problem than refusing to render the People list over it.
-      loadUnreadByPerson(),
-    ])
-    if (error) setError(error.message)
-    else setPeople(people)
-    setUnreadByPerson(unreadByPerson)
-    // Approving a certificate or granting a role changes who can be assigned,
-    // so the picker above has to reload too — it holds its own copy.
-    onChanged?.()
-  }, [onChanged])
-
-  // Clearing a badge shouldn't reload the whole list and collapse the thread
-  // the admin is reading, so it only touches the count it knows changed.
-  const clearUnread = useCallback((personId) => {
-    // Returning prev unchanged when it's already clear keeps this from
-    // re-rendering the list for nothing.
-    setUnreadByPerson((prev) => (prev[personId] ? { ...prev, [personId]: 0 } : prev))
-  }, [])
-
-  useEffect(() => {
-    refresh()
-  }, [refresh])
+  const counts = useMemo(() => {
+    const all = people ?? []
+    return {
+      all: all.length,
+      applicants: all.filter(isApplicant).length,
+      unread: all.filter((p) => (unreadByPerson[p.id] ?? 0) > 0).length,
+      manager: all.filter((p) => p.role === 'manager').length,
+      business: all.filter((p) => p.role === 'business').length,
+      posted: all.filter((p) => projectOwnerIds.has(p.id)).length,
+    }
+  }, [people, unreadByPerson, projectOwnerIds])
 
   const newCount = (people ?? []).filter(
     (p) => Date.now() - new Date(p.created_at).getTime() < NEW_FOR_MS
   ).length
 
-  // People, not messages: five from one person is still one conversation to
-  // open.
-  const waitingCount = Object.values(unreadByPerson).filter((n) => n > 0).length
-
-  // The queue that actually needs working through. Without this you are
-  // scanning 80-odd rows for amber badges.
-  const applicantCount = (people ?? []).filter((p) => p.role === 'applicant').length
-
   return (
-    <section className="mb-10">
+    <section id="people" className="mb-10 scroll-mt-24">
       <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">
         People <span className="text-slate-500">({people?.length ?? 0})</span>
         {newCount > 0 && <span className="ml-2 normal-case tracking-normal text-slate-400">{newCount} new this week</span>}
-        {/* The whole point of a badge is not having to open every row to find
-            the one that needs answering, so the count is surfaced up here too. */}
-        {applicantCount > 0 && (
-          <span className="ml-2 normal-case tracking-normal text-amber-300">
-            · {applicantCount} {applicantCount === 1 ? 'applicant' : 'applicants'} to review
-          </span>
-        )}
-        {waitingCount > 0 && (
-          <span className="ml-2 normal-case tracking-normal text-cyan-glow">
-            · {waitingCount} waiting on a reply
-          </span>
-        )}
       </h2>
-      {error && <Alert>{error}</Alert>}
-      {!error && people === null && <p className="text-sm text-slate-400">Loading…</p>}
-      {people?.length === 0 && <Empty>Nobody has signed up yet.</Empty>}
+
       {people?.length > 0 && (
+        <>
+          <SearchBox
+            value={query}
+            onChange={onQuery}
+            placeholder="Search by name, email or company…"
+            resultCount={visible.length}
+            total={people.length}
+          />
+          <div className="mb-4 flex flex-wrap gap-2">
+            {PEOPLE_FILTERS.map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => onFilter(value)}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                  filter === value
+                    ? 'border-cyan-glow/50 bg-cyan-glow/10 text-cyan-glow'
+                    : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/25 hover:text-slate-200'
+                }`}
+              >
+                {label} <span className="text-slate-600">{counts[value] ?? 0}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {people === null && <p className="text-sm text-slate-400">Loading…</p>}
+      {people?.length === 0 && <Empty>Nobody has signed up yet.</Empty>}
+      {people?.length > 0 && visible.length === 0 && (
+        <Empty>Nobody matches that. Try a different search, or switch filter.</Empty>
+      )}
+      {visible.length > 0 && (
         <div className="card">
           <ul>
-            {people.map((p) => (
+            {visible.map((p) => (
               <PersonRow
                 key={p.id}
                 person={p}
                 isSelf={p.id === currentUserId}
                 viewerId={currentUserId}
                 unread={unreadByPerson[p.id] ?? 0}
-                onDone={refresh}
-                onThreadRead={() => clearUnread(p.id)}
+                onDone={onChanged}
+                onThreadRead={() => onThreadRead(p.id)}
               />
             ))}
           </ul>
@@ -435,27 +621,120 @@ function People({ currentUserId, onChanged }) {
   )
 }
 
+// What is actually waiting on an admin, in one place. The three signals used to
+// live in three different sections, so working out whether there was anything
+// to do meant scrolling the whole page.
+function Worklist({ applicants, unread, awaiting, onShowApplicants, onShowUnread }) {
+  // No explicit `behavior`: index.css sets scroll-behavior: smooth globally, so
+  // this matches every other in-page jump on the site and stays in step if that
+  // ever changes. scroll-mt-24 on the targets keeps the heading clear of the
+  // fixed portal header.
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ block: 'start' })
+
+  const items = [
+    applicants > 0 && {
+      key: 'applicants',
+      label: `${applicants} ${applicants === 1 ? 'applicant' : 'applicants'} to review`,
+      tone: 'border-amber-400/40 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20',
+      onClick: () => {
+        onShowApplicants()
+        scrollTo('people')
+      },
+    },
+    unread > 0 && {
+      key: 'unread',
+      label: `${unread} ${unread === 1 ? 'conversation' : 'conversations'} waiting on a reply`,
+      tone: 'border-cyan-glow/40 bg-cyan-glow/10 text-cyan-glow hover:bg-cyan-glow/20',
+      onClick: () => {
+        onShowUnread()
+        scrollTo('people')
+      },
+    },
+    awaiting > 0 && {
+      key: 'awaiting',
+      label: `${awaiting} ${awaiting === 1 ? 'project' : 'projects'} awaiting assignment`,
+      tone: 'border-white/20 bg-white/5 text-slate-200 hover:bg-white/10',
+      onClick: () => scrollTo('awaiting-assignment'),
+    },
+  ].filter(Boolean)
+
+  if (items.length === 0) return null
+
+  return (
+    <div className="mb-8 flex flex-wrap gap-2">
+      {items.map((item) => (
+        <button
+          key={item.key}
+          onClick={item.onClick}
+          className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${item.tone}`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminDashboard({ userId }) {
   const [projects, setProjects] = useState(null)
   const [managers, setManagers] = useState([])
+  const [people, setPeople] = useState(null)
+  const [unreadByPerson, setUnreadByPerson] = useState({})
   const [error, setError] = useState('')
+  const [peopleFilter, setPeopleFilter] = useState('all')
+  const [peopleQuery, setPeopleQuery] = useState('')
+  const [projectQuery, setProjectQuery] = useState('')
 
   const refresh = useCallback(async () => {
-    const [{ projects, error }, { managers, error: mErr }] = await Promise.all([loadProjects(), loadManagers()])
-    if (error || mErr) setError((error ?? mErr).message)
-    else {
-      setProjects(projects)
-      setManagers(managers)
-    }
+    const [proj, mgr, ppl, unread] = await Promise.all([
+      loadProjects(),
+      loadManagers(),
+      loadPeople(),
+      // Deliberately unchecked: an unlit badge is a far smaller problem than
+      // refusing to render the whole dashboard over it.
+      loadUnreadByPerson(),
+    ])
+    const failure = proj.error ?? mgr.error ?? ppl.error
+    setError(failure ? failure.message : '')
+    // Set each only on its own success, so one failing call doesn't blank a
+    // section that loaded perfectly well.
+    if (!proj.error) setProjects(proj.projects)
+    if (!mgr.error) setManagers(mgr.managers)
+    if (!ppl.error) setPeople(ppl.people)
+    setUnreadByPerson(unread.unreadByPerson)
   }, [])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  const open = projects?.filter((p) => p.status === 'open') ?? []
-  const live = projects?.filter((p) => ['assigned', 'in_progress'].includes(p.status)) ?? []
-  const closed = projects?.filter((p) => ['completed', 'cancelled'].includes(p.status)) ?? []
+  // Clearing a badge shouldn't reload everything and collapse the thread being
+  // read, so it only touches the count it knows changed. Returning prev
+  // unchanged when it's already clear avoids a re-render for nothing.
+  const clearUnread = useCallback((personId) => {
+    setUnreadByPerson((prev) => (prev[personId] ? { ...prev, [personId]: 0 } : prev))
+  }, [])
+
+  // Memoised so its identity is stable: People filters on it inside a useMemo,
+  // and a fresh Set every render would recompute that list for nothing.
+  // Built from every project regardless of status — someone who posted and
+  // then cancelled has still used the Portal.
+  const projectOwnerIds = useMemo(
+    () => new Set((projects ?? []).map((p) => p.owner_id)),
+    [projects]
+  )
+
+  const needle = projectQuery.trim().toLowerCase()
+  const matching = (projects ?? []).filter((p) => matchesProject(p, needle))
+
+  const open = matching.filter((p) => p.status === 'open')
+  const live = matching.filter((p) => ['assigned', 'in_progress'].includes(p.status))
+  const closed = matching.filter((p) => ['completed', 'cancelled'].includes(p.status))
+
+  const applicantCount = (people ?? []).filter(isApplicant).length
+  const unreadCount = Object.values(unreadByPerson).filter((n) => n > 0).length
+  // From the unfiltered list: a search shouldn't change what's waiting on you.
+  const awaitingCount = (projects ?? []).filter((p) => p.status === 'open').length
 
   return (
     <>
@@ -466,29 +745,54 @@ export default function AdminDashboard({ userId }) {
       {error && <Alert>{error}</Alert>}
       {!error && projects === null && <p className="text-sm text-slate-400">Loading…</p>}
 
+      {projects !== null && (
+        <Worklist
+          applicants={applicantCount}
+          unread={unreadCount}
+          awaiting={awaitingCount}
+          onShowApplicants={() => {
+            setPeopleFilter('applicants')
+            setPeopleQuery('')
+          }}
+          onShowUnread={() => {
+            setPeopleFilter('unread')
+            setPeopleQuery('')
+          }}
+        />
+      )}
+
       {managers.length === 0 && projects !== null && (
         <div className="mb-8">
           <Alert kind="info">
-            No AI Managers yet. Have one sign in once, then run:{' '}
-            <code className="text-xs">
-              update profiles set role = 'manager' where id = (select id from auth.users where email = '…');
-            </code>
+            No AI Managers yet. Someone has to apply and have two certificates approved before they can
+            be assigned — set a person's role to <code className="text-xs">manager</code> in People below
+            once you've checked their links.
           </Alert>
         </div>
       )}
 
+      {projects !== null && projects.length > 0 && (
+        <SearchBox
+          value={projectQuery}
+          onChange={setProjectQuery}
+          placeholder="Search projects by title, detail or who posted it…"
+          resultCount={matching.length}
+          total={projects.length}
+        />
+      )}
+
       {projects !== null &&
         [
-          ['Awaiting assignment', open],
-          ['Live', live],
-          ['Closed', closed],
-        ].map(([label, list]) => (
-          <section key={label} className="mb-10">
+          ['Awaiting assignment', 'awaiting-assignment', open],
+          ['Live', 'live', live],
+          ['Closed', 'closed', closed],
+        ].map(([label, id, list]) => (
+          <section key={id} id={id} className="mb-10 scroll-mt-24">
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">
               {label} <span className="text-slate-500">({list.length})</span>
             </h2>
             {list.length === 0 ? (
-              <Empty>Nothing here.</Empty>
+              <Empty>{needle ? 'Nothing here matches that search.' : 'Nothing here.'}</Empty>
             ) : (
               <div className="grid gap-5 lg:grid-cols-2">
                 {list.map((p) => (
@@ -503,7 +807,18 @@ export default function AdminDashboard({ userId }) {
 
       {/* After the project queue: assigning work is the job, seeing who signed
           up is the check-in. */}
-      <People currentUserId={userId} onChanged={refresh} />
+      <People
+        people={people}
+        unreadByPerson={unreadByPerson}
+        projectOwnerIds={projectOwnerIds}
+        currentUserId={userId}
+        filter={peopleFilter}
+        onFilter={setPeopleFilter}
+        query={peopleQuery}
+        onQuery={setPeopleQuery}
+        onChanged={refresh}
+        onThreadRead={clearUnread}
+      />
     </>
   )
 }

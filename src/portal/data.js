@@ -182,6 +182,23 @@ export async function setProfileRole(profileId, role) {
   return {}
 }
 
+// What deleting someone would destroy. Null comes back for a non-admin, which
+// is why the caller treats null as a refusal rather than as "nothing attached".
+export async function loadPersonImpact(personId) {
+  const { data, error } = await supabase.rpc('admin_person_impact', { p_person_id: personId })
+  if (error) return { error }
+  if (!data) return { error: { message: 'Only an admin can see this.' } }
+  return { impact: data }
+}
+
+// Deletes the auth.users row, which cascades to the profile and everything
+// hanging off it — see admin_delete_person() in schema.sql for what goes.
+// Irreversible, and it does not stop the same address signing up again.
+export async function deletePerson(personId) {
+  const { error } = await supabase.rpc('admin_delete_person', { p_person_id: personId })
+  return error ? { error } : {}
+}
+
 // Upgrading is a sales conversation rather than a checkout, so a plan is
 // granted here after it is agreed. guard_plan_change() refuses anyone else.
 export async function setProfilePlan(profileId, plan) {

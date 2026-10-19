@@ -611,6 +611,74 @@ as $$
    order by p.created_at desc
 $$;
 
+-- -----------------------------------------------------------------------------
+-- Deleting a person
+--
+-- The real record is the auth.users row — profiles.id references it with
+-- `on delete cascade`, and everything else hangs off profiles the same way.
+-- Deleting the profile alone would leave someone who can still sign in but has
+-- no profile, and handle_new_user only fires on insert, so it would never come
+-- back. So the delete has to happen in auth.users, which PostgREST does not
+-- expose. Hence security definer.
+-- -----------------------------------------------------------------------------
+
+-- What a delete would destroy, so the confirmation can say it rather than the
+-- admin finding out afterwards. Returns null for anyone who isn't an admin,
+-- which the client treats as "not allowed" rather than "nothing attached".
+create or replace function admin_person_impact(p_person_id uuid)
+returns jsonb
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select case when is_admin() then jsonb_build_object(
+    'projects',    (select count(*) from projects   where owner_id   = p_person_id),
+    'assignments', (select count(*) from assignments where manager_id = p_person_id),
+    'messages',    (select count(*) from messages   where person_id  = p_person_id),
+    'assigned',    (select count(*) from assignments where assigned_by = p_person_id)
+  ) end
+$$;
+
+revoke execute on function admin_person_impact(uuid) from anon;
+grant execute on function admin_person_impact(uuid) to authenticated;
+
+create or replace function admin_delete_person(p_person_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not is_admin() then
+    raise exception 'Only an admin can delete a person';
+  end if;
+
+  -- The screen already makes your own row read-only, but the screen is not
+  -- the gate. Deleting yourself would take your admin rights with it and
+  -- leave nobody able to grant them back.
+  if p_person_id = auth.uid() then
+    raise exception 'You cannot delete your own account';
+  end if;
+
+  -- assignments.assigned_by deliberately has no cascade: it records who made
+  -- a decision, and that record shouldn't vanish because someone left. Raised
+  -- as a sentence rather than left to surface as a foreign-key violation.
+  if exists (select 1 from assignments where assigned_by = p_person_id) then
+    raise exception
+      'This person has assigned projects. Assignment history records who decided, so it will not delete. Delete or reassign those projects first.';
+  end if;
+
+  -- Cascades from here: profile, their projects, assignments of those
+  -- projects, assignments where they were the manager, and both sides of
+  -- every message thread.
+  delete from auth.users where id = p_person_id;
+end
+$$;
+
+revoke execute on function admin_delete_person(uuid) from anon;
+grant execute on function admin_delete_person(uuid) to authenticated;
+
 -- Existing installs, for messaging: create the `messages` table above, then
 -- set_message_direction() and mark_messages_read(), then its three policies
 -- and the grant — all of them, since a table with RLS on and no policy is a
