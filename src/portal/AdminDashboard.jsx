@@ -12,6 +12,7 @@ import {
   loadProjects,
   loadUnreadByPerson,
   MIN_CERTIFICATES,
+  PLAN_LABELS,
   PLANS,
   setCertificateApproval,
   setProfilePlan,
@@ -357,7 +358,7 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, open, onToggle, onDon
           >
             {PLANS.map((p) => (
               <option key={p} value={p} className="bg-ink-800">
-                {p}
+                {PLAN_LABELS[p]}
               </option>
             ))}
           </select>

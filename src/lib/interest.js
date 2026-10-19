@@ -12,7 +12,11 @@
 export const INTEREST_SLUGS = {
   call: 'Free 30-min AI discovery call',
   premium: 'AI Manager Portal — Premium plan',
-  enterprise: 'AI Manager Portal — Enterprise plan',
+  ultimate: 'AI Manager Portal — Ultimate plan',
+  // The tier was called Enterprise until it was renamed. Kept so a link
+  // copied or bookmarked before then still preselects the right option
+  // rather than silently landing on the default.
+  enterprise: 'AI Manager Portal — Ultimate plan',
   consultancy: 'Consultancy engagement',
 }
 

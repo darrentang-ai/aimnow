@@ -34,11 +34,11 @@ const tiers = [
     featured: true,
   },
   {
-    name: 'Enterprise',
+    name: 'Ultimate',
     tagline: 'Custom — talk to us',
     features: ['Multi-user accounts', 'White-label reporting', 'SLA guarantee', 'Dedicated support', 'Retainer agreement'],
     cta: 'Contact sales',
-    interest: 'AI Manager Portal — Enterprise plan',
+    interest: 'AI Manager Portal — Ultimate plan',
     href: '#contact',
     featured: false,
   },
@@ -51,7 +51,7 @@ function TierCta({ tier }) {
   const className = `mt-8 block w-full text-center ${tier.featured ? 'btn-primary' : 'btn-ghost'}`
 
   const onClick = () => {
-    // Only tiers carrying a `plan` are measured; add one to Enterprise if it
+    // Only tiers carrying a `plan` are measured; add one to Ultimate if it
     // needs tracking too.
     if (tier.plan) trackPlanClick(tier.plan)
     // Preselecting the contact form is pointless when we're leaving the page.

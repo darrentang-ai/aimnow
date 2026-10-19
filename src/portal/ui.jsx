@@ -73,21 +73,23 @@ export function Empty({ children }) {
 }
 
 // Where a business goes once the free plan's one project is used up. The
-// Enterprise plan is sold rather than self-served, so this lands on the contact
+// Ultimate plan is sold rather than self-served, so this lands on the contact
 // form with that option already chosen — see lib/interest.js for why the
 // interest travels as a query parameter rather than the usual event.
-export const UPGRADE_HREF = '/?interest=enterprise#contact'
+export const UPGRADE_HREF = '/?interest=ultimate#contact'
 
 export function UpgradePrompt({ heading = 'You have used your free project' }) {
   return (
     <div className="rounded-2xl border border-cyan-glow/25 bg-gradient-to-b from-aim-blue/10 to-transparent p-8 text-center">
       <h2 className="font-display text-xl font-700 text-white">{heading}</h2>
+      {/* Lists what the Ultimate card lists. It used to offer API access,
+          which was dropped from that card because there is no API. */}
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-400">
-        A free account covers one project. To run several at once, talk to us about an Enterprise
-        plan — multi-user accounts, API access and a dedicated contact.
+        A free account covers one project. To run several at once, talk to us about an Ultimate
+        plan — multi-user accounts, white-label reporting and a dedicated contact.
       </p>
       <Link to={UPGRADE_HREF} className="btn-primary mt-6">
-        Talk to us about Enterprise
+        Talk to us about Ultimate
       </Link>
     </div>
   )

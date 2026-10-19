@@ -237,6 +237,13 @@ export async function setProfilePlan(profileId, plan) {
 
 export const PLANS = ['free', 'premium', 'enterprise']
 
+// The top tier is called Ultimate on the site but is still stored as
+// 'enterprise': the value is in a check constraint, in every existing row,
+// and in nothing a customer sees. Renaming it would be a migration bought for
+// nothing, so the label is mapped here instead — the admin dropdown reads the
+// same word the pricing card does.
+export const PLAN_LABELS = { free: 'free', premium: 'premium', enterprise: 'ultimate' }
+
 // Messages -------------------------------------------------------------------
 //
 // A thread is just a person_id — see the messages table in schema.sql. The

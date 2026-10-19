@@ -9,7 +9,7 @@ import { interestFromSearch } from '../lib/interest'
 const interests = [
   'Free 30-min AI discovery call',
   'AI Manager Portal — Premium plan',
-  'AI Manager Portal — Enterprise plan',
+  'AI Manager Portal — Ultimate plan',
   'Consultancy engagement',
   'General enquiry',
 ]
