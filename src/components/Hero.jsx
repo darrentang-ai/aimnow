@@ -26,8 +26,20 @@ export default function Hero() {
           >
             <Link
               to="/portal"
-              className="group inline-flex max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-full border border-cyan-glow/25 bg-cyan-glow/5 px-4 py-1.5 text-xs transition-colors hover:border-cyan-glow/50 hover:bg-cyan-glow/10 sm:text-sm"
+              className="group relative isolate inline-flex max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 overflow-hidden rounded-full border border-cyan-glow/25 bg-cyan-glow/5 px-4 py-1.5 text-xs transition-colors animate-pillGlow hover:border-cyan-glow/50 hover:bg-cyan-glow/10 motion-reduce:animate-none sm:text-sm"
             >
+              {/* The glint. aria-hidden and pointer-events-none because it is
+                  decoration — it must not be announced or swallow the click.
+                  -z-10 under an `isolate` parent keeps it behind the text
+                  without needing a z-index on every label.
+
+                  Hidden outright under prefers-reduced-motion: a band of light
+                  crossing the first thing on the page, every few seconds, is
+                  exactly what that setting exists to stop. */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 -z-10 w-1/3 animate-sweep bg-gradient-to-r from-transparent via-cyan-glow/30 to-transparent blur-[2px] motion-reduce:hidden"
+              />
               <span className="font-semibold uppercase tracking-wider text-cyan-glow">New</span>
               {/* Arrow inside the text rather than beside it: as a sibling flex
                   item it wrapped onto a line of its own once the sentence broke
