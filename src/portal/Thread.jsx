@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { deleteConversation, loadMessages, markMessagesRead, sendMessage } from './data'
+import { deleteConversation, formatDateTime, loadMessages, markMessagesRead, sendMessage } from './data'
 import { Alert } from './ui'
 
 // One conversation between AIM Now and one person. Both sides render this same
@@ -115,12 +115,7 @@ export default function Thread({ personId, viewerId, isAdmin, personName, onRead
                         side is the person themselves — their own name reads as
                         "You" to them, and as who they are to an admin. */}
                     {m.from_admin ? 'AIM Now' : isAdmin ? personName || 'Them' : 'You'} ·{' '}
-                    {new Date(m.created_at).toLocaleString(undefined, {
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {formatDateTime(m.created_at)}
                   </p>
                 </div>
               </div>

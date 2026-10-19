@@ -362,8 +362,31 @@ export function approvedCount(certificates) {
   return (certificates ?? []).filter((c) => c.approved === true).length
 }
 
+// Written out rather than left to toLocaleString, which asks the browser to
+// decide and so rendered one timestamp two ways: an admin reading "Oct 19,
+// 04:02 PM" in the People list while the person it was sent to saw "19 Oct,
+// 16:02" — the same message, apparently at different times.
+//
+// Pinning a locale wasn't enough. Every day-first English locale abbreviates
+// September as "Sept" in some ICU builds and "Sep" in others, and browsers
+// ship their own, so the two sides could still disagree. This is the only way
+// the format is the same everywhere.
+//
+// The clock stays local to whoever is reading: two people in different
+// timezones should see their own time for the same message, which is why
+// these use the local getters rather than the UTC ones.
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const pad = (n) => String(n).padStart(2, '0')
+
 export function formatDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+  const d = new Date(iso)
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+}
+
+// 24-hour, so there is no AM/PM to read differently on either side.
+export function formatDateTime(iso) {
+  const d = new Date(iso)
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 export function managerLabel(manager) {
