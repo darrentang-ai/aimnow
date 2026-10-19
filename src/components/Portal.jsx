@@ -26,7 +26,7 @@ const tiers = [
   {
     name: 'Premium',
     tagline: 'Unlock more from the Portal',
-    features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Message AI Managers directly', 'Priority project placement'],
+    features: ['View all bids & amounts', 'Full profiles & ratings', 'Shortlist & compare bids', 'Regular project updates', 'Priority project placement'],
     cta: 'Upgrade to Premium',
     interest: 'AI Manager Portal — Premium plan',
     href: '#contact',
