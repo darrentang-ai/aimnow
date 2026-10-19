@@ -196,14 +196,11 @@ function AssignControls({ project, managers, onDone }) {
   )
 }
 
-function PersonRow({ person, isSelf, viewerId, unread = 0, onDone, onThreadRead }) {
+// `open` is owned by People rather than held here, because the list needs to
+// know what is open to avoid filtering it away — see visible() below.
+function PersonRow({ person, isSelf, viewerId, unread = 0, open, onToggle, onDone, onThreadRead }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  // Collapsed by default. With 80-odd people, a row that renders its
-  // certificates, personal projects and a message thread inline means four
-  // people fit on screen; the badges and the summary line below carry enough
-  // to decide whether this is the row worth opening.
-  const [open, setOpen] = useState(false)
   // null until the confirmation is opened — the counts are fetched then, so a
   // list of eighty rows doesn't ask the database what deleting each would cost.
   const [impact, setImpact] = useState(null)
@@ -281,7 +278,7 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, onDone, onThreadRead 
             the row out from under it. */}
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={onToggle}
           aria-expanded={open}
           className="group min-w-0 flex-1 text-left"
         >
@@ -533,17 +530,42 @@ function People({
   onChanged,
   onThreadRead,
 }) {
+  // Rows the admin currently has open. Collapsed by default — with 80-odd
+  // people, a row rendering its certificates, personal projects and a message
+  // thread inline means four fit on screen.
+  const [openIds, setOpenIds] = useState(() => new Set())
+
+  const toggleOpen = useCallback((id) => {
+    setOpenIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    return (people ?? []).filter((p) => {
-      if (!matchesPerson(p, needle)) return false
+    const matchesFilter = (p) => {
       if (filter === 'all') return true
       if (filter === 'applicants') return isApplicant(p)
       if (filter === 'unread') return (unreadByPerson[p.id] ?? 0) > 0
       if (filter === 'posted') return projectOwnerIds.has(p.id)
       return p.role === filter
+    }
+    return (people ?? []).filter((p) => {
+      if (!matchesPerson(p, needle)) return false
+      // An open row stays, even once it stops matching. Acting on someone is
+      // what changes whether they match: reading their messages clears the
+      // unread badge, granting a role takes them out of Applicants. Without
+      // this the row vanishes mid-read — on the last match, leaving an empty
+      // list and no way back to what you were looking at.
+      //
+      // Search is not exempted: typing a new query is asking for something
+      // else, where dropping the old row is the point.
+      return matchesFilter(p) || openIds.has(p.id)
     })
-  }, [people, unreadByPerson, projectOwnerIds, filter, query])
+  }, [people, unreadByPerson, projectOwnerIds, filter, query, openIds])
 
   const counts = useMemo(() => {
     const all = people ?? []
@@ -610,6 +632,8 @@ function People({
                 isSelf={p.id === currentUserId}
                 viewerId={currentUserId}
                 unread={unreadByPerson[p.id] ?? 0}
+                open={openIds.has(p.id)}
+                onToggle={() => toggleOpen(p.id)}
                 onDone={onChanged}
                 onThreadRead={() => onThreadRead(p.id)}
               />
