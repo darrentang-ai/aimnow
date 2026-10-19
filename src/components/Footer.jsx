@@ -63,7 +63,13 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} AIM NOW. All rights reserved.</p>
+          {/* The build credit sits with the copyright rather than in the link
+              columns: it's a statement about the site, not somewhere to go. */}
+          <p className="text-center text-xs text-slate-500 sm:text-left">
+            © {new Date().getFullYear()} AIM NOW. All rights reserved.
+            <span className="mx-2 hidden text-slate-700 sm:inline">·</span>
+            <span className="mt-1 block sm:mt-0 sm:inline">Built by AIM Now with Claude</span>
+          </p>
           <div className="flex gap-6 text-xs text-slate-500">
             <a href="#" className="transition-colors hover:text-cyan-glow">Privacy</a>
             <a href="#" className="transition-colors hover:text-cyan-glow">Terms</a>
