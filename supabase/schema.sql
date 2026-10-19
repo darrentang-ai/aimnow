@@ -214,6 +214,11 @@ $$;
 -- are trusted server-side contexts and are how roles are granted in the first
 -- place — including the very first admin, who by definition cannot be promoted
 -- by an existing one. So the guard only bites when a request carries a JWT.
+-- The one exception is someone putting themselves forward as an applicant.
+-- 'applicant' grants nothing — not listed publicly, not assignable, no wider
+-- read than a business — so letting a business ask is safe, and it is the only
+-- way a business who later decides to build can do so. Narrowly scoped: their
+-- own row, business to applicant only, never toward manager or admin.
 create or replace function guard_role_change()
 returns trigger
 language plpgsql
@@ -223,7 +228,8 @@ as $$
 begin
   if new.role is distinct from old.role
      and auth.uid() is not null
-     and not is_admin() then
+     and not is_admin()
+     and not (new.id = auth.uid() and old.role = 'business' and new.role = 'applicant') then
     raise exception 'Only an admin can change a role';
   end if;
   return new;

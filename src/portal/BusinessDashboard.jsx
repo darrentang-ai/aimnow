@@ -1,11 +1,56 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { atProjectLimit, loadProjects } from './data'
+import { applyAsManager, atProjectLimit, loadProjects } from './data'
 import MessagesSection from './MessagesSection'
 import ProjectCard from './ProjectCard'
 import { Alert, Empty, PageHead, UPGRADE_HREF } from './ui'
 
-export default function BusinessDashboard({ userId, plan }) {
+// The only route for a business who later decides they want to build rather
+// than post. Without it the sign-in screen was the only place that mentioned
+// becoming an AI Manager, and choosing it there did nothing for an account
+// that already existed: signup metadata is read once, on insert.
+function ApplyToBuild({ userId, onApplied }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const apply = async () => {
+    setBusy(true)
+    setError('')
+    const { error } = await applyAsManager(userId)
+    setBusy(false)
+    if (error) setError(error.message)
+    // Changes which dashboard this account gets, so the profile has to be
+    // re-read rather than left until the next reload.
+    else onApplied()
+  }
+
+  return (
+    <section className="mt-12">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+        <h2 className="font-display text-lg font-600 text-white">Want to build, rather than post?</h2>
+        <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-slate-400">
+          Apply to join our network of AI Managers. You'll be asked for two AI certificates, each with a
+          link to the issuer's verification page, which we check ourselves before you can be matched
+          with work.
+        </p>
+        <button
+          onClick={apply}
+          disabled={busy}
+          className="btn-ghost mt-5 !py-2.5 !text-xs disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {busy ? 'Applying…' : 'Apply to become an AI Manager'}
+        </button>
+        {error && (
+          <div className="mt-3">
+            <Alert>{error}</Alert>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+export default function BusinessDashboard({ userId, plan, onProfileChanged }) {
   const [projects, setProjects] = useState(null)
   const [error, setError] = useState('')
 
@@ -61,6 +106,7 @@ export default function BusinessDashboard({ userId, plan }) {
         </div>
       )}
       <MessagesSection userId={userId} />
+      <ApplyToBuild userId={userId} onApplied={onProfileChanged} />
     </>
   )
 }

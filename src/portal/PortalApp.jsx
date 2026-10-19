@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { isConfigured, supabase } from '../lib/supabase'
 import AdminDashboard from './AdminDashboard'
@@ -43,13 +43,15 @@ export default function PortalApp() {
 
   const userId = session?.user?.id
 
-  useEffect(() => {
+  // Exposed as a callback as well as an effect: applying to become an AI
+  // Manager changes your own role, and the dashboard you get is chosen from
+  // it, so the screen has to re-read rather than wait for a reload.
+  const loadProfile = useCallback(async () => {
     if (!userId) {
       setProfile(null)
       return
     }
-    let cancelled = false
-    supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, role, plan, full_name, company')
       .eq('id', userId)
@@ -57,16 +59,14 @@ export default function PortalApp() {
       // trigger never ran, which is worth reporting clearly rather than as a
       // generic query error.
       .maybeSingle()
-      .then(({ data, error }) => {
-        if (cancelled) return
-        if (error) setError(error.message)
-        else if (!data) setError('No profile row for this account — run supabase/schema.sql, then sign in again.')
-        else setProfile(data)
-      })
-    return () => {
-      cancelled = true
-    }
+    if (error) setError(error.message)
+    else if (!data) setError('No profile row for this account — run supabase/schema.sql, then sign in again.')
+    else setProfile(data)
   }, [userId])
+
+  useEffect(() => {
+    loadProfile()
+  }, [loadProfile])
 
   if (!isConfigured) {
     return (
@@ -124,7 +124,7 @@ export default function PortalApp() {
     profile.role === 'manager' || profile.role === 'applicant' ? (
       <ManagerDashboard userId={userId} role={profile.role} />
     ) : (
-      <BusinessDashboard userId={userId} plan={profile.plan} />
+      <BusinessDashboard userId={userId} plan={profile.plan} onProfileChanged={loadProfile} />
     )
 
   return (

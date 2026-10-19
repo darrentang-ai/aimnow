@@ -182,6 +182,27 @@ export async function setProfileRole(profileId, role) {
   return {}
 }
 
+// A business putting itself forward to build instead. No RPC needed: the
+// profiles_update_own policy already allows writing your own row, and
+// guard_role_change() permits exactly this one transition — see schema.sql.
+//
+// The `role = 'business'` filter is what makes a second click a no-op rather
+// than a reset, and signup_as is deliberately left alone: it records what they
+// chose when they joined, which is still true.
+export async function applyAsManager(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role: 'applicant' })
+    .eq('id', userId)
+    .eq('role', 'business')
+    .select('id')
+  if (error) return { error }
+  if (!data?.length) {
+    return { error: { message: 'Nothing changed — your account may already be an application.' } }
+  }
+  return {}
+}
+
 // What deleting someone would destroy. Null comes back for a non-admin, which
 // is why the caller treats null as a refusal rather than as "nothing attached".
 export async function loadPersonImpact(personId) {
