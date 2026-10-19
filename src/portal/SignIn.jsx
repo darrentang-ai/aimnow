@@ -67,10 +67,41 @@ function DevPasswordSignIn() {
   )
 }
 
+// The last address used on this device, so a returning user lands on a form
+// that is already filled in. Only ever a convenience: it is not a session, and
+// "Not you?" clears it. Wrapped because storage throws in a private window
+// rather than returning null.
+const LAST_EMAIL_KEY = 'aimnow:last-email'
+
+function readLastEmail() {
+  try {
+    return localStorage.getItem(LAST_EMAIL_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function rememberEmail(value) {
+  try {
+    localStorage.setItem(LAST_EMAIL_KEY, value)
+  } catch {
+    // A device that won't remember is no worse than before this existed.
+  }
+}
+
+function forgetEmail() {
+  try {
+    localStorage.removeItem(LAST_EMAIL_KEY)
+  } catch {
+    // As above.
+  }
+}
+
 // Passwordless on purpose: no password storage, no reset flow, no "forgot"
 // screen to build or support.
 export default function SignIn() {
-  const [email, setEmail] = useState('')
+  const remembered = readLastEmail()
+  const [email, setEmail] = useState(remembered)
   const [fullName, setFullName] = useState('')
   const [company, setCompany] = useState('')
   // /portal?as=manager preselects the AI Manager option, so a link that
@@ -87,40 +118,79 @@ export default function SignIn() {
   // the latter: it's set by CTAs worded as "become" or "sign up", never by
   // anything aimed at an existing member.
   const [searchParams] = useSearchParams()
-  const [signupAs, setSignupAs] = useState(searchParams.get('as') === 'manager' ? 'manager_apply' : '')
+  const wantsManager = searchParams.get('as') === 'manager'
+  const [signupAs, setSignupAs] = useState(wantsManager ? 'manager_apply' : '')
   const isManagerIntent = signupAs === 'manager_existing' || signupAs === 'manager_apply'
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [installOffered, setInstallOffered] = useState(false)
 
+  // Two modes, because everything except the email is read exactly once —
+  // handle_new_user fires on insert into auth.users, so for an existing
+  // account the name, company and signup choice are all discarded. Asking a
+  // returning user to fill them in every time was work with no effect.
+  //
+  // We can't detect which they are: Supabase deliberately won't tell the
+  // browser whether an address is registered, and an endpoint that did would
+  // hand anyone a way to test which emails have accounts. So the default
+  // leans on what we know — a remembered address means they've been here —
+  // and a link switches.
+  //
+  // ?as=manager always means signup: it comes from CTAs worded as "become" or
+  // "sign up", never from anything aimed at someone who already has an account.
+  const [mode, setMode] = useState(!wantsManager && remembered ? 'signin' : 'signup')
+  const signingIn = mode === 'signin'
+
+  // Offered after a failed sign-in, so "no account with that address" is one
+  // click from fixing rather than a dead end.
+  const [offerSignup, setOfferSignup] = useState(false)
+
+  const switchToSignup = () => {
+    setMode('signup')
+    setOfferSignup(false)
+    setError('')
+  }
+
   const onSubmit = async (e) => {
     e.preventDefault()
-    // The select has a required, disabled placeholder, so a native submit
-    // already can't reach here with signupAs unset — but belt and braces,
-    // since signup_as's check constraint would otherwise reject an empty
-    // string with a database error instead of this plain sentence.
-    if (!signupAs) {
-      setError('Choose whether you’re signing up as a business or an AI Manager.')
-      return
+    setOfferSignup(false)
+
+    // Signup-only checks. In sign-in mode none of these fields are shown,
+    // because none of them would be read.
+    if (!signingIn) {
+      // The select has a required, disabled placeholder, so a native submit
+      // already can't reach here with signupAs unset — but belt and braces,
+      // since signup_as's check constraint would otherwise reject an empty
+      // string with a database error instead of this plain sentence.
+      if (!signupAs) {
+        setError('Choose whether you’re signing up as a business or an AI Manager.')
+        return
+      }
+      // Mirrors the mandatory markers on the fields below — this is what
+      // actually stops the request, since a required attribute only guards a
+      // real browser submit, not this handler.
+      if (!fullName.trim()) {
+        setError('Enter your name.')
+        return
+      }
+      if (signupAs === 'business' && !company.trim()) {
+        setError('Enter your company name.')
+        return
+      }
     }
-    // Mirrors the mandatory markers on the fields below — this is what
-    // actually stops the request, since a required attribute only guards a
-    // real browser submit, not this handler.
-    if (!fullName.trim()) {
-      setError('Enter your name.')
-      return
-    }
-    if (signupAs === 'business' && !company.trim()) {
-      setError('Enter your company name.')
-      return
-    }
+
     setSending(true)
     setError('')
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${window.location.origin}/portal`,
+        // Sign-in must not quietly create an account. Left to its default,
+        // a typo'd address would make a second profile with no name and no
+        // company — which is where a good number of the blank rows in People
+        // came from.
+        shouldCreateUser: !signingIn,
         // Only applied when the auth user is first created; the
         // handle_new_user trigger copies these into the profile row. Note
         // signup_as lands in `signup_as`, never in `role` — this is metadata
@@ -131,8 +201,24 @@ export default function SignIn() {
       },
     })
     setSending(false)
-    if (error) setError(error.message)
-    else setSent(true)
+
+    if (!error) {
+      rememberEmail(email)
+      setSent(true)
+      return
+    }
+
+    // 422 is what comes back when shouldCreateUser is false and nobody has
+    // that address. Checked by status rather than wording, which is a
+    // server-side string we don't control; the message test is only a fallback.
+    const noSuchAccount =
+      signingIn && (error.status === 422 || /signups? not allowed/i.test(error.message ?? ''))
+    if (noSuchAccount) {
+      setError('')
+      setOfferSignup(true)
+      return
+    }
+    setError(error.message)
   }
 
   if (sent) {
@@ -182,18 +268,22 @@ export default function SignIn() {
   return (
     <div className="mx-auto max-w-md">
       <div className="card">
-        <h1 className="font-display text-2xl font-700 text-white">Sign in to the Portal</h1>
+        <h1 className="font-display text-2xl font-700 text-white">
+          {signingIn ? 'Welcome back' : 'Create your Portal account'}
+        </h1>
         {/* The pitch differs by who's arriving: a business wants the work done,
             an applying manager wants the work, a returning one just wants in.
             Neutral until something is chosen. */}
         <p className="mt-2 text-sm leading-relaxed text-slate-400">
-          {signupAs === 'manager_existing'
-            ? "Welcome back — sign in to your AI Manager account. No password needed — we'll email you a link."
-            : signupAs === 'manager_apply'
-              ? "Join our network and get matched with businesses that need what you build. No password needed — we'll email you a link."
-              : signupAs === 'business'
-                ? "Post a project and we'll match it with a trusted AI Manager. No password needed — we'll email you a link."
-                : "Post a project, or join as an AI Manager. No password needed — we'll email you a link."}
+          {signingIn
+            ? "Enter your email and we'll send you a sign-in link. No password needed."
+            : signupAs === 'manager_existing'
+              ? "Welcome back — sign in to your AI Manager account. No password needed — we'll email you a link."
+              : signupAs === 'manager_apply'
+                ? "Join our network and get matched with businesses that need what you build. No password needed — we'll email you a link."
+                : signupAs === 'business'
+                  ? "Post a project and we'll match it with a trusted AI Manager. No password needed — we'll email you a link."
+                  : "Post a project, or join as an AI Manager. No password needed — we'll email you a link."}
         </p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           {/* Recorded as an intent, not a role — see signup_as in schema.sql.
@@ -212,6 +302,12 @@ export default function SignIn() {
               "nothing chosen yet" a real, visible state, and `required` with
               a disabled placeholder stops a native submit from reaching
               onSubmit while it's showing. */}
+          {/* Signup only. For an existing account this choice is discarded,
+              so showing it would be asking for something we then ignore — and
+              worse, a business picking "Want to become an AI Manager" here
+              would expect it to change something and it would not. That route
+              is the apply button on their own dashboard instead. */}
+          {!signingIn && (
           <Field label="I'm signing up as">
             <select
               required
@@ -239,6 +335,7 @@ export default function SignIn() {
               </option>
             </select>
           </Field>
+          )}
           <Field label="Email" required>
             <input
               required
@@ -251,20 +348,25 @@ export default function SignIn() {
               placeholder={isManagerIntent ? 'you@example.com' : 'you@company.com'}
             />
           </Field>
-          <Field label="Your name" required hint="Only used the first time you sign in.">
-            <input
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="input"
-              placeholder="Jane Doe"
-            />
-          </Field>
+          {/* Also signup only, and the hint says why: the name is read once,
+              when the account is created. Asking a returning user for it every
+              visit was work that changed nothing. */}
+          {!signingIn && (
+            <Field label="Your name" required hint="Only used the first time you sign in.">
+              <input
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="input"
+                placeholder="Jane Doe"
+              />
+            </Field>
+          )}
           {/* An AI Manager joins as an individual, not on behalf of a company.
               Required rather than optional: a profile with no company and no
               name beyond "Jane Doe" would leave an admin no way to identify
               which business a project actually belongs to. */}
-          {signupAs === 'business' && (
+          {!signingIn && signupAs === 'business' && (
             <Field label="Company" required>
               <input
                 required
@@ -276,10 +378,63 @@ export default function SignIn() {
             </Field>
           )}
           <button type="submit" disabled={sending} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-70">
-            {sending ? 'Sending…' : 'Email me a sign-in link'}
+            {sending ? 'Sending…' : signingIn ? 'Email me a sign-in link' : 'Create account'}
           </button>
           {error && <Alert>{error}</Alert>}
+
+          {/* A failed sign-in that means "no account here" is a fork in the
+              road, not an error — so it reads as one, and keeps the address
+              they already typed. */}
+          {offerSignup && (
+            <Alert kind="info">
+              No account for <span className="font-semibold">{email}</span> yet.{' '}
+              <button
+                type="button"
+                onClick={switchToSignup}
+                className="font-semibold underline underline-offset-2"
+              >
+                Create one
+              </button>{' '}
+              — it takes a moment.
+            </Alert>
+          )}
         </form>
+
+        <div className="mt-5 border-t border-white/10 pt-4 text-center text-xs">
+          {signingIn ? (
+            <button
+              onClick={switchToSignup}
+              className="font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
+            >
+              New here? Create an account
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setMode('signin')
+                setError('')
+              }}
+              className="font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
+            >
+              Already have an account? Sign in
+            </button>
+          )}
+          {/* Shared devices exist. Clearing drops the stored address and the
+              one in the field, so the next person starts clean. */}
+          {signingIn && remembered && (
+            <button
+              onClick={() => {
+                forgetEmail()
+                setEmail('')
+                setOfferSignup(false)
+              }}
+              className="ml-3 text-slate-600 transition-colors hover:text-slate-300"
+            >
+              Not you?
+            </button>
+          )}
+        </div>
+
         {import.meta.env.DEV && <DevPasswordSignIn />}
       </div>
     </div>
