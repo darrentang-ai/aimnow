@@ -36,7 +36,7 @@ const tiers = [
   {
     name: 'Enterprise',
     tagline: 'Custom — talk to us',
-    features: ['Multi-user accounts', 'API access', 'White-label reporting', 'SLA guarantee', 'Dedicated support', 'Retainer agreement'],
+    features: ['Multi-user accounts', 'White-label reporting', 'SLA guarantee', 'Dedicated support', 'Retainer agreement'],
     cta: 'Contact sales',
     interest: 'AI Manager Portal — Enterprise plan',
     href: '#contact',
