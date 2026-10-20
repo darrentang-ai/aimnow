@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { atProjectLimit, describeInsertError, loadProjects } from './data'
 import { Alert, Field, PageHead, UpgradePrompt } from './ui'
 
-const BUDGETS = ['Under €2,000', '€2,000 – €5,000', '€5,000 – €15,000', '€15,000+', 'Not sure yet']
+const BUDGETS = ['Under $2,000', '$2,000 – $5,000', '$5,000 – $15,000', '$15,000+', 'Not sure yet']
 const TIMELINES = ['As soon as possible', 'Within a month', 'This quarter', 'Just exploring']
 
 // What an AI Manager has to work out before they can scope anything. Posting
