@@ -94,12 +94,13 @@ function SearchBox({ value, onChange, placeholder, resultCount, total }) {
   )
 }
 
-function AssignControls({ project, managers, onDone }) {
+function AssignControls({ project, managers, viewerId, onDone, onThreadRead }) {
   const [managerId, setManagerId] = useState('')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [messaging, setMessaging] = useState(false)
 
   const run = async (fn) => {
     setBusy(true)
@@ -158,6 +159,32 @@ function AssignControls({ project, managers, onDone }) {
             {label}
           </button>
         ))}
+      </div>
+
+      {/* The conversation opens here rather than sending you to the People tab,
+          because what you need while writing to a business about their project
+          is the brief, still on screen above. Looking up their record is the
+          separate job the owner name does. */}
+      <div className="border-t border-white/10 pt-3">
+        <button
+          onClick={() => setMessaging((v) => !v)}
+          className="text-xs font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
+        >
+          {messaging ? 'Hide conversation' : 'Message the owner'}
+        </button>
+        {/* Mounted only once opened, so a queue of project cards isn't a
+            queue of threads all fetching at once. */}
+        {messaging && (
+          <div className="mt-3">
+            <Thread
+              personId={project.owner_id}
+              viewerId={viewerId}
+              isAdmin
+              personName={project.owner?.full_name || project.owner?.email}
+              onRead={() => onThreadRead?.(project.owner_id)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Deliberately the quietest control here: Cancel keeps the record and is
@@ -585,7 +612,7 @@ function People({
   ).length
 
   return (
-    <section id="people" className="mb-10 scroll-mt-24">
+    <section id="people" className="mb-10">
       <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">
         People <span className="text-slate-500">({people?.length ?? 0})</span>
         {newCount > 0 && <span className="ml-2 normal-case tracking-normal text-slate-400">{newCount} new this week</span>}
@@ -649,37 +676,27 @@ function People({
 // What is actually waiting on an admin, in one place. The three signals used to
 // live in three different sections, so working out whether there was anything
 // to do meant scrolling the whole page.
-function Worklist({ applicants, unread, awaiting, onShowApplicants, onShowUnread }) {
-  // No explicit `behavior`: index.css sets scroll-behavior: smooth globally, so
-  // this matches every other in-page jump on the site and stays in step if that
-  // ever changes. scroll-mt-24 on the targets keeps the heading clear of the
-  // fixed portal header.
-  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ block: 'start' })
-
+// Each chip switches to the tab that answers it. No scrolling any more: the
+// tab content starts directly below, so changing tab IS the navigation.
+function Worklist({ applicants, unread, awaiting, onShowApplicants, onShowUnread, onShowAwaiting }) {
   const items = [
     applicants > 0 && {
       key: 'applicants',
       label: `${applicants} ${applicants === 1 ? 'applicant' : 'applicants'} to review`,
       tone: 'border-amber-400/40 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20',
-      onClick: () => {
-        onShowApplicants()
-        scrollTo('people')
-      },
+      onClick: onShowApplicants,
     },
     unread > 0 && {
       key: 'unread',
       label: `${unread} ${unread === 1 ? 'conversation' : 'conversations'} waiting on a reply`,
       tone: 'border-cyan-glow/40 bg-cyan-glow/10 text-cyan-glow hover:bg-cyan-glow/20',
-      onClick: () => {
-        onShowUnread()
-        scrollTo('people')
-      },
+      onClick: onShowUnread,
     },
     awaiting > 0 && {
       key: 'awaiting',
       label: `${awaiting} ${awaiting === 1 ? 'project' : 'projects'} awaiting assignment`,
       tone: 'border-white/20 bg-white/5 text-slate-200 hover:bg-white/10',
-      onClick: () => scrollTo('awaiting-assignment'),
+      onClick: onShowAwaiting,
     },
   ].filter(Boolean)
 
@@ -700,15 +717,43 @@ function Worklist({ applicants, unread, awaiting, onShowApplicants, onShowUnread
   )
 }
 
+function Tabs({ tab, onTab, projectCount, peopleCount }) {
+  return (
+    <div className="mb-8 flex flex-wrap gap-2 border-b border-white/10 pb-px">
+      {[
+        ['projects', 'Projects', projectCount],
+        ['people', 'People', peopleCount],
+      ].map(([value, label, count]) => (
+        <button
+          key={value}
+          onClick={() => onTab(value)}
+          aria-current={tab === value ? 'page' : undefined}
+          className={`-mb-px rounded-t-lg border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === value
+              ? 'border-cyan-glow text-cyan-glow'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          {label} <span className="text-slate-600">{count}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminDashboard({ userId }) {
   const [projects, setProjects] = useState(null)
   const [managers, setManagers] = useState([])
   const [people, setPeople] = useState(null)
   const [unreadByPerson, setUnreadByPerson] = useState({})
   const [error, setError] = useState('')
+  const [tab, setTab] = useState('projects')
   const [peopleFilter, setPeopleFilter] = useState('all')
   const [peopleQuery, setPeopleQuery] = useState('')
   const [projectQuery, setProjectQuery] = useState('')
+  // Closed only ever grows, and it's the group you almost never need. Kept out
+  // of the way rather than rendered in full every time the page loads.
+  const [showClosed, setShowClosed] = useState(false)
 
   const refresh = useCallback(async () => {
     const [proj, mgr, ppl, unread] = await Promise.all([
@@ -761,89 +806,143 @@ export default function AdminDashboard({ userId }) {
   // From the unfiltered list: a search shouldn't change what's waiting on you.
   const awaitingCount = (projects ?? []).filter((p) => p.status === 'open').length
 
+  // Looking someone up from a project card: the People tab, searched to them.
+  // Email rather than name because two people can share a name — and in this
+  // data several do.
+  const showPerson = (project) => {
+    setTab('people')
+    setPeopleFilter('all')
+    setPeopleQuery(project.owner?.email || project.owner?.full_name || '')
+  }
+
+  const projectGroup = (label, list) => (
+    <section key={label} className="mb-10">
+      <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">
+        {label} <span className="text-slate-500">({list.length})</span>
+      </h2>
+      {list.length === 0 ? (
+        <Empty>{needle ? 'Nothing here matches that search.' : 'Nothing here.'}</Empty>
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-2">
+          {list.map((p) => (
+            <ProjectCard key={p.id} project={p} showOwner onOwnerClick={showPerson}>
+              <AssignControls
+                project={p}
+                managers={managers}
+                viewerId={userId}
+                onDone={refresh}
+                onThreadRead={clearUnread}
+              />
+            </ProjectCard>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+
   return (
     <>
+      {/* One title over both tabs, since the tab labels say which is which. */}
       <PageHead
-        title="All projects"
-        sub="Review what businesses have posted and assign a trusted AI Manager."
+        title="Admin"
+        sub="Assign work, review applicants, and answer anyone waiting on a reply."
       />
       {error && <Alert>{error}</Alert>}
       {!error && projects === null && <p className="text-sm text-slate-400">Loading…</p>}
 
+      {/* Above the tabs rather than inside one: it's what tells you which tab
+          to be on, so it can't live in either. */}
       {projects !== null && (
         <Worklist
           applicants={applicantCount}
           unread={unreadCount}
           awaiting={awaitingCount}
           onShowApplicants={() => {
+            setTab('people')
             setPeopleFilter('applicants')
             setPeopleQuery('')
           }}
           onShowUnread={() => {
+            setTab('people')
             setPeopleFilter('unread')
             setPeopleQuery('')
           }}
+          onShowAwaiting={() => setTab('projects')}
         />
       )}
 
-      {managers.length === 0 && projects !== null && (
-        <div className="mb-8">
-          <Alert kind="info">
-            No AI Managers yet. Someone has to apply and have two certificates approved before they can
-            be assigned — set a person's role to <code className="text-xs">manager</code> in People below
-            once you've checked their links.
-          </Alert>
-        </div>
-      )}
-
-      {projects !== null && projects.length > 0 && (
-        <SearchBox
-          value={projectQuery}
-          onChange={setProjectQuery}
-          placeholder="Search projects by title, detail or who posted it…"
-          resultCount={matching.length}
-          total={projects.length}
+      {projects !== null && (
+        <Tabs
+          tab={tab}
+          onTab={setTab}
+          projectCount={projects.length}
+          peopleCount={people?.length ?? 0}
         />
       )}
 
-      {projects !== null &&
-        [
-          ['Awaiting assignment', 'awaiting-assignment', open],
-          ['Live', 'live', live],
-          ['Closed', 'closed', closed],
-        ].map(([label, id, list]) => (
-          <section key={id} id={id} className="mb-10 scroll-mt-24">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-glow">
-              {label} <span className="text-slate-500">({list.length})</span>
-            </h2>
-            {list.length === 0 ? (
-              <Empty>{needle ? 'Nothing here matches that search.' : 'Nothing here.'}</Empty>
-            ) : (
-              <div className="grid gap-5 lg:grid-cols-2">
-                {list.map((p) => (
-                  <ProjectCard key={p.id} project={p} showOwner>
-                    <AssignControls project={p} managers={managers} onDone={refresh} />
-                  </ProjectCard>
-                ))}
-              </div>
-            )}
-          </section>
-        ))}
+      {projects !== null && tab === 'projects' && (
+        <>
+          {managers.length === 0 && (
+            <div className="mb-8">
+              <Alert kind="info">
+                No AI Managers yet. Someone has to apply and have two certificates approved before they
+                can be assigned — set a person's role to <code className="text-xs">manager</code> on the
+                People tab once you've checked their links.
+              </Alert>
+            </div>
+          )}
 
-      {/* After the project queue: assigning work is the job, seeing who signed
-          up is the check-in. */}
-      <People
-        people={people}
-        unreadByPerson={unreadByPerson}
-        projectOwnerIds={projectOwnerIds}
-        currentUserId={userId}
-        filter={peopleFilter}
-        onFilter={setPeopleFilter}
-        query={peopleQuery}
-        onQuery={setPeopleQuery}
-        onChanged={refresh}
-        onThreadRead={clearUnread}
-      />
+          {projects.length > 0 && (
+            <SearchBox
+              value={projectQuery}
+              onChange={setProjectQuery}
+              placeholder="Search projects by title, detail or who posted it…"
+              resultCount={matching.length}
+              total={projects.length}
+            />
+          )}
+
+          {projectGroup('Awaiting assignment', open)}
+          {projectGroup('Live', live)}
+
+          {/* Closed is behind a toggle, not hidden: the count is on the button,
+              so a search that only matches closed projects still tells you they
+              are in there rather than looking like no results. */}
+          {showClosed ? (
+            <>
+              {projectGroup('Closed', closed)}
+              <button
+                onClick={() => setShowClosed(false)}
+                className="text-xs font-semibold text-slate-500 transition-colors hover:text-cyan-glow"
+              >
+                Hide closed
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setShowClosed(true)}
+              className="text-xs font-semibold text-slate-500 transition-colors hover:text-cyan-glow"
+            >
+              Show closed ({closed.length})
+            </button>
+          )}
+        </>
+      )}
+
+      {projects !== null && tab === 'people' && (
+        <People
+          people={people}
+          unreadByPerson={unreadByPerson}
+          projectOwnerIds={projectOwnerIds}
+          currentUserId={userId}
+          filter={peopleFilter}
+          onFilter={setPeopleFilter}
+          query={peopleQuery}
+          onQuery={setPeopleQuery}
+          onChanged={refresh}
+          onThreadRead={clearUnread}
+        />
+      )}
     </>
   )
 }

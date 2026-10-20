@@ -5,7 +5,12 @@ const approvedCertificates = (manager) =>
   (manager?.certificates ?? []).filter((c) => c.approved)
 
 // Shared by all three dashboards; `children` is where each role's controls go.
-export default function ProjectCard({ project, showOwner = false, children }) {
+//
+// `onOwnerClick` is for looking up the person's record — role, plan,
+// certificates, their other projects. Messaging them is a separate thing and
+// stays on the card itself, because a reply about a project wants the brief
+// still on screen.
+export default function ProjectCard({ project, showOwner = false, onOwnerClick, children }) {
   return (
     <div className="card">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -31,7 +36,22 @@ export default function ProjectCard({ project, showOwner = false, children }) {
         {showOwner && (
           <div>
             <dt className="inline font-semibold uppercase tracking-wide">Owner</dt>{' '}
-            <dd className="inline text-slate-300">{ownerLabel(project.owner, project.owner_id)}</dd>
+            <dd className="inline">
+              {/* Only a link when there's a profile to look up and somewhere to
+                  send you. With no profile the label is a truncated id, which
+                  nothing could find. */}
+              {onOwnerClick && project.owner ? (
+                <button
+                  onClick={() => onOwnerClick(project)}
+                  title="Find this person"
+                  className="text-slate-300 underline-offset-2 transition-colors hover:text-cyan-glow hover:underline"
+                >
+                  {ownerLabel(project.owner, project.owner_id)}
+                </button>
+              ) : (
+                <span className="text-slate-300">{ownerLabel(project.owner, project.owner_id)}</span>
+              )}
+            </dd>
             {/* Own line, not appended to the label above — email is the one
                 field here long enough to make that line wrap awkwardly. */}
             {project.owner?.email && <dd className="block text-slate-500">{project.owner.email}</dd>}
