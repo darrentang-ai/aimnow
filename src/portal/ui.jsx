@@ -28,11 +28,23 @@ export function PortalShell({ email, role, onSignOut, children }) {
     <div className="min-h-screen bg-ink-900">
       <header className="border-b border-white/10 bg-ink-900/80 backdrop-blur-xl">
         <div className="container-x flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link to="/" className="transition-opacity hover:opacity-80" aria-label="Back to aimnow.io">
               <Logo className="h-7 w-auto" />
             </Link>
-            <span className="hidden text-sm font-semibold text-slate-400 sm:block">AI Manager Portal</span>
+            <div className="flex items-center gap-2">
+              <span className="hidden text-sm font-semibold text-slate-400 sm:block">AI Manager Portal</span>
+              {/* Amber rather than the brand cyan: this is a caveat, not a
+                  feature. Deliberately not hidden on small screens the way the
+                  label beside it is — a beta notice that disappears on phones
+                  undersells exactly the people most likely to hit a rough edge. */}
+              <span
+                title="Still being built — things may change, and we'd like to hear what breaks."
+                className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300"
+              >
+                Beta
+              </span>
+            </div>
           </div>
           {email && (
             <div className="flex items-center gap-3">
