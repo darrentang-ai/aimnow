@@ -94,7 +94,7 @@ function SearchBox({ value, onChange, placeholder, resultCount, total }) {
   )
 }
 
-function AssignControls({ project, managers, viewerId, onDone, onThreadRead }) {
+function AssignControls({ project, managers, viewerId, unread = 0, onDone, onThreadRead }) {
   const [managerId, setManagerId] = useState('')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
@@ -168,9 +168,17 @@ function AssignControls({ project, managers, viewerId, onDone, onThreadRead }) {
       <div className="border-t border-white/10 pt-3">
         <button
           onClick={() => setMessaging((v) => !v)}
-          className="text-xs font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 transition-colors hover:text-cyan-glow"
         >
           {messaging ? 'Hide conversation' : 'Message the owner'}
+          {/* So triaging the queue doesn't mean switching to People to find
+              out this owner has been waiting. Hidden once the thread is open,
+              because by then you are reading it. */}
+          {!messaging && unread > 0 && (
+            <span className="inline-flex min-w-[1.25rem] animate-pulseGlow items-center justify-center rounded-full bg-cyan-glow px-1.5 py-0.5 text-[10px] font-bold text-ink-900 motion-reduce:animate-none">
+              {unread}
+            </span>
+          )}
         </button>
         {/* Mounted only once opened, so a queue of project cards isn't a
             queue of threads all fetching at once. */}
@@ -717,13 +725,14 @@ function Worklist({ applicants, unread, awaiting, onShowApplicants, onShowUnread
   )
 }
 
-function Tabs({ tab, onTab, projectCount, peopleCount }) {
+function Tabs({ tab, onTab, projectCount, peopleCount, unread }) {
   return (
     <div className="mb-8 flex flex-wrap gap-2 border-b border-white/10 pb-px">
       {[
-        ['projects', 'Projects', projectCount],
-        ['people', 'People', peopleCount],
-      ].map(([value, label, count]) => (
+        ['projects', 'Projects', projectCount, 0],
+        // Messages hang off a person, so unread only ever belongs to this tab.
+        ['people', 'People', peopleCount, unread],
+      ].map(([value, label, count, waiting]) => (
         <button
           key={value}
           onClick={() => onTab(value)}
@@ -735,6 +744,18 @@ function Tabs({ tab, onTab, projectCount, peopleCount }) {
           }`}
         >
           {label} <span className="text-slate-600">{count}</span>
+          {/* Filled rather than outlined, so it reads as a count of things
+              rather than another total. It only exists while something is
+              unread, which is also why the pulse is tolerable — it stops the
+              moment you've read them. */}
+          {waiting > 0 && (
+            <span
+              title={`${waiting} ${waiting === 1 ? 'person is' : 'people are'} waiting on a reply`}
+              className="ml-2 inline-flex min-w-[1.25rem] animate-pulseGlow items-center justify-center rounded-full bg-cyan-glow px-1.5 py-0.5 text-[10px] font-bold text-ink-900 motion-reduce:animate-none"
+            >
+              {waiting}
+            </span>
+          )}
         </button>
       ))}
     </div>
@@ -830,6 +851,7 @@ export default function AdminDashboard({ userId }) {
                 project={p}
                 managers={managers}
                 viewerId={userId}
+                unread={unreadByPerson[p.owner_id] ?? 0}
                 onDone={refresh}
                 onThreadRead={clearUnread}
               />
@@ -877,6 +899,7 @@ export default function AdminDashboard({ userId }) {
           onTab={setTab}
           projectCount={projects.length}
           peopleCount={people?.length ?? 0}
+          unread={unreadCount}
         />
       )}
 
