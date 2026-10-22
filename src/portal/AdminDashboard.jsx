@@ -53,6 +53,14 @@ const PEOPLE_FILTERS = [
   ['posted', 'With projects'],
 ]
 
+// Polling hands back a fresh object every time. Without this the dashboard
+// re-rendered every 30 seconds to say nothing had changed, recomputing the
+// filtered People list each time.
+function sameCounts(a, b) {
+  const keys = Object.keys(a)
+  return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k])
+}
+
 function matchesPerson(person, needle) {
   if (!needle) return true
   return [person.full_name, person.email, person.company]
@@ -804,6 +812,31 @@ export default function AdminDashboard({ userId }) {
   // unchanged when it's already clear avoids a re-render for nothing.
   const clearUnread = useCallback((personId) => {
     setUnreadByPerson((prev) => (prev[personId] ? { ...prev, [personId]: 0 } : prev))
+  }, [])
+
+  // The unread badge is the only thing here that changes without the admin
+  // doing something, so it's the only thing polled. Deliberately not the whole
+  // refresh(): that reloads every person with their email and runs three
+  // project queries, which is a great deal of work to find out whether one
+  // number moved. This is a single query returning ids.
+  //
+  // Same rules as an open thread — foreground only, and check on return rather
+  // than waiting out the interval. Thirty seconds, because a badge can afford
+  // to be slower than a conversation someone is watching.
+  useEffect(() => {
+    const check = async () => {
+      if (document.visibilityState !== 'visible') return
+      const { unreadByPerson: next, error } = await loadUnreadByPerson()
+      // Silent on failure: a badge that lags is better than an error banner
+      // over a dashboard that is otherwise fine.
+      if (!error) setUnreadByPerson((prev) => (sameCounts(prev, next) ? prev : next))
+    }
+    const id = setInterval(check, 30000)
+    document.addEventListener('visibilitychange', check)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', check)
+    }
   }, [])
 
   // Memoised so its identity is stable: People filters on it inside a useMemo,
