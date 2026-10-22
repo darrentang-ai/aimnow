@@ -22,17 +22,29 @@ export default function Thread({ personId, viewerId, isAdmin, personName, onRead
   const onReadRef = useRef(onRead)
   onReadRef.current = onRead
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async ({ quiet = false } = {}) => {
     const { messages, error } = await loadMessages(personId)
     if (error) {
-      setError(error.message)
+      // A failed poll stays silent: the thread on screen is still valid, and
+      // replacing it with an error because one background fetch missed would
+      // be worse than showing slightly stale messages.
+      if (!quiet) setError(error.message)
       return
     }
-    setMessages(messages)
 
-    // Opening the thread is what counts as reading it. The function decides
-    // which direction to clear from auth.uid(), so an admin reading doesn't
-    // mark their own unanswered messages as read.
+    // Only replace the list when it has actually changed. Without this every
+    // poll re-renders and re-runs the scroll-to-bottom effect, which would
+    // yank the view back down while someone is reading up the thread.
+    setMessages((prev) =>
+      prev && prev.length === messages.length && prev.at(-1)?.id === messages.at(-1)?.id
+        ? prev
+        : messages
+    )
+
+    // Opening the thread is what counts as reading it — and so is having it
+    // open when something arrives. The function decides which direction to
+    // clear from auth.uid(), so an admin reading doesn't mark their own
+    // unanswered messages as read.
     const unreadFromThem = messages.some((m) => m.from_admin !== isAdmin && !m.read_at)
     if (unreadFromThem) {
       const { error: readError } = await markMessagesRead(personId)
@@ -44,6 +56,27 @@ export default function Thread({ personId, viewerId, isAdmin, personName, onRead
 
   useEffect(() => {
     refresh()
+  }, [refresh])
+
+  // Replies arrive while the thread sits open, so it checks for them rather
+  // than waiting to be reopened. Polling rather than Realtime: a conversation
+  // moves at human pace, and this needs no publication change, no websocket
+  // and nothing to reconnect.
+  //
+  // Nothing is fetched while the tab is in the background — an admin with the
+  // Portal open in a forgotten tab shouldn't be sending requests all day — and
+  // coming back to the tab checks immediately rather than waiting out the
+  // interval.
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState === 'visible') refresh({ quiet: true })
+    }
+    const id = setInterval(check, 15000)
+    document.addEventListener('visibilitychange', check)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', check)
+    }
   }, [refresh])
 
   // Jump to the newest message, the way every other chat does.
