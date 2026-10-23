@@ -33,7 +33,7 @@ export function PortalShell({ email, role, onSignOut, children }) {
               <Logo className="h-7 w-auto" />
             </Link>
             <div className="flex items-center gap-2">
-              <span className="hidden text-sm font-semibold text-slate-400 sm:block">AI Manager Portal</span>
+              <span className="hidden text-sm font-semibold text-slate-400 sm:block">Portal</span>
               {/* Amber rather than the brand cyan: this is a caveat, not a
                   feature. Deliberately not hidden on small screens the way the
                   label beside it is — a beta notice that disappears on phones
