@@ -4,8 +4,28 @@ import { supabase } from '../lib/supabase'
 import { atProjectLimit, describeInsertError, loadProjects } from './data'
 import { Alert, Field, PageHead, UpgradePrompt } from './ui'
 
-const BUDGETS = ['Under $2,000', '$2,000 – $5,000', '$5,000 – $15,000', '$15,000+', 'Not sure yet']
 const TIMELINES = ['As soon as possible', 'Within a month', 'This quarter', 'Just exploring']
+
+// A slider instead of a dropdown of ranges: picking a point on a line is a
+// smaller ask than mentally sorting yourself into a bucket, so fewer people
+// bail out to "Not sure yet" by default. Steps are uneven on purpose — finer
+// near the common end, coarser once "exact number" stops mattering.
+const BUDGET_STEPS = [500, 1000, 2000, 3500, 5000, 7500, 10000, 15000, 25000, 50000]
+const DEFAULT_BUDGET_INDEX = 4 // $5,000 — a plausible real project, not the floor or ceiling
+
+// Clients post from the UK, Europe, North America, ANZ and APAC (see
+// About.jsx) — a dollar sign alone is ambiguous across most of that list.
+const CURRENCIES = ['USD', 'GBP', 'EUR', 'AUD', 'CAD']
+
+function formatBudgetStep(index, currency) {
+  const value = BUDGET_STEPS[index]
+  const formatted = new Intl.NumberFormat('en', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value)
+  return index === BUDGET_STEPS.length - 1 ? `${formatted}+` : formatted
+}
 
 // What an AI Manager has to work out before they can scope anything. Posting
 // a one-line brief isn't a failure of effort — most people don't know what a
@@ -104,7 +124,15 @@ function BriefGuide({ onUseTemplate, onUseExample, canFill }) {
 
 export default function PostProject({ userId, plan, role }) {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ title: '', summary: '', budget_range: BUDGETS[4], timeline: TIMELINES[1] })
+  const [form, setForm] = useState({
+    title: '',
+    summary: '',
+    budget_range: formatBudgetStep(DEFAULT_BUDGET_INDEX, CURRENCIES[0]),
+    timeline: TIMELINES[1],
+  })
+  const [budgetIndex, setBudgetIndex] = useState(DEFAULT_BUDGET_INDEX)
+  const [budgetUnsure, setBudgetUnsure] = useState(false)
+  const [currency, setCurrency] = useState(CURRENCIES[0])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   // undefined until we know. The dashboard hides the button at the limit, but
@@ -194,11 +222,60 @@ export default function PostProject({ userId, plan, role }) {
         </Field>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Budget">
-            <select value={form.budget_range} onChange={update('budget_range')} className="input">
-              {BUDGETS.map((b) => (
-                <option key={b} value={b} className="bg-ink-800">{b}</option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <select
+                  value={currency}
+                  disabled={budgetUnsure}
+                  onChange={(e) => {
+                    const c = e.target.value
+                    setCurrency(c)
+                    setForm((f) => ({
+                      ...f,
+                      budget_range: budgetUnsure ? 'Not sure yet' : formatBudgetStep(budgetIndex, c),
+                    }))
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-300 outline-none disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c} value={c} className="bg-ink-800">{c}</option>
+                  ))}
+                </select>
+                <span className="text-sm font-medium text-slate-200">
+                  {budgetUnsure ? 'Not sure yet' : formatBudgetStep(budgetIndex, currency)}
+                </span>
+              </div>
+              <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={budgetUnsure}
+                  onChange={(e) => {
+                    const unsure = e.target.checked
+                    setBudgetUnsure(unsure)
+                    setForm((f) => ({
+                      ...f,
+                      budget_range: unsure ? 'Not sure yet' : formatBudgetStep(budgetIndex, currency),
+                    }))
+                  }}
+                  className="accent-cyan-glow"
+                />
+                Not sure yet
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={BUDGET_STEPS.length - 1}
+              step={1}
+              value={budgetIndex}
+              disabled={budgetUnsure}
+              onChange={(e) => {
+                const i = Number(e.target.value)
+                setBudgetIndex(i)
+                setForm((f) => ({ ...f, budget_range: formatBudgetStep(i, currency) }))
+              }}
+              className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-cyan-glow disabled:cursor-not-allowed disabled:opacity-40"
+            />
           </Field>
           <Field label="Timeline">
             <select value={form.timeline} onChange={update('timeline')} className="input">
