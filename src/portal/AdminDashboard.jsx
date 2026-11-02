@@ -22,6 +22,7 @@ import {
   setProfileRole,
   setProjectStatus,
 } from './data'
+import Broadcast from './Broadcast'
 import ProjectCard from './ProjectCard'
 import Thread from './Thread'
 import { Alert, Empty, PageHead } from './ui'
@@ -644,6 +645,9 @@ function People({
 
       {people?.length > 0 && (
         <>
+          {/* Above the search and filters: it acts on everyone, so it is not
+              one of the things you narrow the list to find. */}
+          <Broadcast people={people} onSent={onChanged} />
           <SearchBox
             value={query}
             onChange={onQuery}

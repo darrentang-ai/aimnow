@@ -258,6 +258,23 @@ export async function loadMessages(personId) {
   return { messages: data ?? [], error }
 }
 
+// One message into every matching member's thread, in a single server-side
+// statement — see supabase/broadcast.sql for why the recipient set and the
+// admin check live there rather than here. Returns how many were written,
+// which is the only honest way to report what happened: the client never knew
+// the recipient list.
+export async function broadcastMessage({ body, audience }) {
+  const trimmed = body.trim()
+  if (!trimmed) return { error: { message: 'Write a message first.' } }
+
+  const { data, error } = await supabase.rpc('broadcast_message', {
+    p_body: trimmed,
+    p_audience: audience,
+  })
+  if (error) return { error }
+  return { sent: data ?? 0 }
+}
+
 export async function sendMessage({ personId, senderId, body }) {
   const trimmed = body.trim()
   if (!trimmed) return { error: { message: 'Write a message first.' } }
