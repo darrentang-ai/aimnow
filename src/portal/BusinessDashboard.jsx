@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import AcademyCard from './AcademyCard'
 import { applyAsManager, atProjectLimit, loadProjects } from './data'
 import MessagesSection from './MessagesSection'
 import ProjectCard from './ProjectCard'
@@ -105,6 +106,9 @@ export default function BusinessDashboard({ userId, plan, onProfileChanged }) {
           ))}
         </div>
       )}
+      {/* Below the projects, above the conversation: it is an offer, not
+          something anyone is waiting on. */}
+      <AcademyCard userId={userId} />
       <MessagesSection userId={userId} />
       <ApplyToBuild userId={userId} onApplied={onProfileChanged} />
     </>

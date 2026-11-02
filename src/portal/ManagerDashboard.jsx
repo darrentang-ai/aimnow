@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import AcademyCard from './AcademyCard'
 import { isVerificationLink } from './certificates'
 import { loadAchievements, loadProjects, saveCertificates, savePersonalProjects } from './data'
 import MessagesSection from './MessagesSection'
@@ -352,6 +353,9 @@ export default function ManagerDashboard({ userId, role = 'manager' }) {
       {/* Only once the project list has loaded, so the count isn't briefly 0. */}
       {projects !== null && <Achievements userId={userId} completedCount={completedCount} />}
 
+      {/* After the certificates form rather than before it: an applicant is
+          here to submit credentials, and the course is not one of them. */}
+      <AcademyCard userId={userId} />
       <MessagesSection userId={userId} />
     </>
   )

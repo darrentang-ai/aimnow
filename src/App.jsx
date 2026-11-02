@@ -6,6 +6,9 @@ import Landing from './Landing'
 // eagerly roughly doubled the landing bundle, and that page is the conversion
 // surface — it should not pay for code only /portal uses.
 const PortalApp = lazy(() => import('./portal/PortalApp'))
+// Same reasoning, and separately: the course content is a few hundred KB of
+// text nobody browsing the marketing page should download.
+const AcademyApp = lazy(() => import('./academy/AcademyApp'))
 
 export default function App() {
   return (
@@ -17,6 +20,16 @@ export default function App() {
         element={
           <Suspense fallback={<div className="min-h-screen bg-ink-900" />}>
             <PortalApp />
+          </Suspense>
+        }
+      />
+      {/* Splat for the same reason: AcademyApp routes its own modules,
+          lessons and assessments. */}
+      <Route
+        path="/academy/*"
+        element={
+          <Suspense fallback={<div className="min-h-screen bg-ink-900" />}>
+            <AcademyApp />
           </Suspense>
         }
       />

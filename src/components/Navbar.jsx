@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import Logo from './Logo'
 import { hasSession } from '../lib/session'
 
+// Every item here is an in-page anchor, and that consistency is the point: a
+// nav where one link scrolls and another leaves the site — to a sign-in wall,
+// in the Academy's case — asks people to guess which is which. The Academy is
+// reached from the dashboards, where the members who can open it already are.
 const links = [
   { label: 'Services', href: '#services' },
   { label: 'Portal', href: '#portal' },
@@ -35,12 +39,16 @@ export default function Navbar() {
           : 'border-b border-transparent bg-transparent'
       }`}
     >
-      <nav className="container-x flex h-16 items-center justify-between md:h-20">
+      <nav className="container-x flex h-16 items-center justify-between lg:h-20">
         <a href="#top" className="transition-opacity hover:opacity-80">
-          <Logo className="h-8 w-auto md:h-11" />
+          <Logo className="h-8 w-auto lg:h-11" />
         </a>
 
-        <div className="hidden items-center gap-8 md:flex">
+        {/* lg, not md. The full row — logo, six links and the CTA — needs a
+            little over 950px, so between 768 and roughly 960 it overflowed the
+            container and pushed the CTA off the edge. That was true before the
+            links changed; the burger simply has to cover tablets too. */}
+        <div className="hidden items-center gap-8 lg:flex">
           {links.map((l) => (
             <a
               key={l.href}
@@ -54,14 +62,14 @@ export default function Navbar() {
 
         {/* Access, not acquisition — the hero carries the acquisition CTA, and
             until now a returning user had no route back to their projects. */}
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <Link to="/portal" className="btn-primary !px-6 !py-2.5">
             {portalLabel}
           </Link>
         </div>
 
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 lg:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -73,9 +81,9 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile menu */}
+      {/* Collapsed menu — phones and tablets, up to lg. */}
       <div
-        className={`overflow-hidden border-t border-white/10 bg-ink-900/95 backdrop-blur-xl transition-all duration-300 md:hidden ${
+        className={`overflow-hidden border-t border-white/10 bg-ink-900/95 backdrop-blur-xl transition-all duration-300 lg:hidden ${
           open ? 'max-h-96' : 'max-h-0 border-transparent'
         }`}
       >

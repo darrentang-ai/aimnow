@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+// Imports ../academy/ids underneath, not the course content — see the note in
+// that file. This costs the portal bundle a query, not the lessons.
+import { loadAcademyOverview } from '../academy/admin'
 import {
   approvedCount,
   assignProject,
@@ -22,6 +25,11 @@ import {
 import ProjectCard from './ProjectCard'
 import Thread from './Thread'
 import { Alert, Empty, PageHead } from './ui'
+
+// Lazy: it reads the course structure, and the lesson text that comes with
+// that import has no business in the chunk every signed-in user downloads.
+// Only an admin can see this tab, and only after clicking it.
+const AcademyProgress = lazy(() => import('./AcademyProgress'))
 
 // 'applicant' sits next to 'business' deliberately: it is the state someone is
 // in before you have checked anything, and moving them to 'manager' is the
@@ -733,13 +741,16 @@ function Worklist({ applicants, unread, awaiting, onShowApplicants, onShowUnread
   )
 }
 
-function Tabs({ tab, onTab, projectCount, peopleCount, unread }) {
+function Tabs({ tab, onTab, projectCount, peopleCount, learnerCount, unread }) {
   return (
     <div className="mb-8 flex flex-wrap gap-2 border-b border-white/10 pb-px">
       {[
         ['projects', 'Projects', projectCount, 0],
         // Messages hang off a person, so unread only ever belongs to this tab.
         ['people', 'People', peopleCount, unread],
+        // Null until the learner list has loaded, so the label never shows a
+        // zero that only means "not fetched yet".
+        ['academy', 'Academy', learnerCount, 0],
       ].map(([value, label, count, waiting]) => (
         <button
           key={value}
@@ -751,7 +762,7 @@ function Tabs({ tab, onTab, projectCount, peopleCount, unread }) {
               : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >
-          {label} <span className="text-slate-600">{count}</span>
+          {label} {count !== null && <span className="text-slate-600">{count}</span>}
           {/* Filled rather than outlined, so it reads as a count of things
               rather than another total. It only exists while something is
               unread, which is also why the pulse is tolerable — it stops the
@@ -775,6 +786,11 @@ export default function AdminDashboard({ userId }) {
   const [managers, setManagers] = useState([])
   const [people, setPeople] = useState(null)
   const [unreadByPerson, setUnreadByPerson] = useState({})
+  // Loaded with everything else rather than when the tab is opened, because
+  // the count has to be on the tab before anyone clicks it. The query is one
+  // admin-gated RPC returning a row per learner, which is the same work the
+  // tab itself needs — so the tab is handed this rather than fetching again.
+  const [academy, setAcademy] = useState({ learners: null, error: '' })
   const [error, setError] = useState('')
   const [tab, setTab] = useState('projects')
   const [peopleFilter, setPeopleFilter] = useState('all')
@@ -785,13 +801,18 @@ export default function AdminDashboard({ userId }) {
   const [showClosed, setShowClosed] = useState(false)
 
   const refresh = useCallback(async () => {
-    const [proj, mgr, ppl, unread] = await Promise.all([
+    const [proj, mgr, ppl, unread, learners] = await Promise.all([
       loadProjects(),
       loadManagers(),
       loadPeople(),
       // Deliberately unchecked: an unlit badge is a far smaller problem than
       // refusing to render the whole dashboard over it.
       loadUnreadByPerson(),
+      // Same treatment, and for a stronger reason: academy.sql may not have
+      // been run on this project yet, and the Projects and People tabs have no
+      // business breaking over that. The error is carried to the Academy tab,
+      // which is where it can be explained.
+      loadAcademyOverview(),
     ])
     const failure = proj.error ?? mgr.error ?? ppl.error
     setError(failure ? failure.message : '')
@@ -801,6 +822,7 @@ export default function AdminDashboard({ userId }) {
     if (!mgr.error) setManagers(mgr.managers)
     if (!ppl.error) setPeople(ppl.people)
     setUnreadByPerson(unread.unreadByPerson)
+    setAcademy({ learners: learners.error ? null : learners.learners, error: learners.error?.message ?? '' })
   }, [])
 
   useEffect(() => {
@@ -932,6 +954,7 @@ export default function AdminDashboard({ userId }) {
           onTab={setTab}
           projectCount={projects.length}
           peopleCount={people?.length ?? 0}
+          learnerCount={academy.learners?.length ?? null}
           unread={unreadCount}
         />
       )}
@@ -983,6 +1006,12 @@ export default function AdminDashboard({ userId }) {
             </button>
           )}
         </>
+      )}
+
+      {projects !== null && tab === 'academy' && (
+        <Suspense fallback={<p className="text-sm text-slate-400">Loading…</p>}>
+          <AcademyProgress learners={academy.learners} error={academy.error} />
+        </Suspense>
       )}
 
       {projects !== null && tab === 'people' && (

@@ -91,6 +91,16 @@ body {
   }
 }
 
+/* The only page anyone prints is the Academy certificate, and a dark page
+   prints as a sheet of ink. Tailwind's print: variants drop the chrome; this
+   flips the canvas so what is left reads on paper. */
+@media print {
+  body {
+    background: #fff;
+    color: #0f172a;
+  }
+}
+
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
