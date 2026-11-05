@@ -24,6 +24,26 @@ export default function Certificate({ state, name, email }) {
     )
   }
 
+  // Passed, but not yet paid for. The course and the assessment are free; the
+  // certificate is what is charged for, and an admin records the payment.
+  if (!state.certificatePaid) {
+    return (
+      <div className="max-w-2xl">
+        <h1 className="font-display text-2xl font-700 text-white">Course complete</h1>
+        <p className="mt-3 text-sm leading-relaxed text-slate-400">
+          You have passed the final assessment. Your certificate is issued once payment is received: send AIM Now a
+          message from your dashboard and we will arrange it. It appears here as soon as we have recorded it.
+        </p>
+        <Link to="/portal" className="btn-primary mt-6">
+          Message AIM Now
+        </Link>
+        <Link to="/academy" className="btn-ghost ml-3 mt-6">
+          Back to the course
+        </Link>
+      </div>
+    )
+  }
+
   const final = bestAttempt(state.attempts, FINAL_ID)
   const awarded = fmt.format(new Date(final.created_at))
   // The record is the attempt rows in Supabase; this is the readable face of

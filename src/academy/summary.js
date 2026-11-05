@@ -10,7 +10,7 @@ import { COURSE_ID, FINAL_ID } from './ids'
 // head: true with an exact count asks PostgREST for the count alone, so no
 // rows cross the wire.
 export async function loadMySummary(userId) {
-  const [lessons, final] = await Promise.all([
+  const [lessons, final, payment] = await Promise.all([
     supabase
       .from('academy_lesson_progress')
       .select('*', { count: 'exact', head: true })
@@ -27,11 +27,17 @@ export async function loadMySummary(userId) {
       // verification link, and an admin's approval is tied to that link.
       .order('created_at', { ascending: true })
       .limit(1),
+    supabase
+      .from('academy_certificate_payments')
+      .select('paid_at')
+      .eq('user_id', userId)
+      .eq('course_id', COURSE_ID)
+      .maybeSingle(),
   ])
 
-  const error = lessons.error ?? final.error
+  const error = lessons.error ?? final.error ?? payment.error
   if (error) return { error }
 
   const finalAttemptId = final.data?.[0]?.id ?? null
-  return { lessonsDone: lessons.count ?? 0, certified: finalAttemptId !== null, finalAttemptId }
+  return { lessonsDone: lessons.count ?? 0, certified: finalAttemptId !== null, finalAttemptId, paid: Boolean(payment.data) }
 }

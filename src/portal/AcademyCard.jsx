@@ -72,7 +72,7 @@ export default function AcademyCard({ userId }) {
         )}
 
         <Link to="/academy" className="btn-ghost mt-5 !py-2.5 !text-xs">
-          {summary?.certified ? 'View your certificate' : started ? 'Resume the course' : 'Start the course'}
+          {summary?.certified ? (summary.paid ? 'View your certificate' : 'Get your certificate') : started ? 'Resume the course' : 'Start the course'}
         </Link>
       </div>
     </section>

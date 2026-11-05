@@ -37,7 +37,9 @@ function Achievements({ userId, completedCount }) {
     loadMySummary(userId).then((result) => {
       // Silent on failure, as on the Academy card: without it they simply
       // don't get the shortcut, and can't be said to have lost anything.
-      if (!cancelled && !result.error && result.certified) {
+      // Paid as well as passed: the certificate is charged for, and the
+      // verification link shows nothing until it has been.
+      if (!cancelled && !result.error && result.certified && result.paid) {
         setAcademyPath(academyCertificatePath(result.finalAttemptId))
       }
     })

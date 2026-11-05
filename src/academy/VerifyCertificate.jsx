@@ -27,6 +27,18 @@ function Fact({ label, children }) {
 }
 
 function Result({ record }) {
+  // Passed but not paid for, so not issued: said without a name or score.
+  if (!record.paid) {
+    return (
+      <>
+        <h1 className="font-display text-xl font-700 text-white">Certificate not yet issued</h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-400">
+          This certificate has not been issued. Check again once AIM Now has confirmed it.
+        </p>
+      </>
+    )
+  }
+
   const complete = record.lessons_done >= COURSE_SHAPE.lessons && record.modules_passed >= COURSE_SHAPE.modules
 
   if (!complete) {

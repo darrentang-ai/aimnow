@@ -76,7 +76,12 @@ export default function AcademyApp() {
         return
       }
       setProfile(p ?? null)
-      setState({ completed: progress.completed, attempts: progress.attempts, exercises: progress.exercises })
+      setState({
+        completed: progress.completed,
+        attempts: progress.attempts,
+        exercises: progress.exercises,
+        certificatePaid: progress.certificatePaid,
+      })
     })()
     return () => {
       cancelled = true

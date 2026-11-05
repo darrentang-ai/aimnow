@@ -93,6 +93,22 @@ create table if not exists academy_exercise_responses (
   constraint academy_exercise_score_fits check (score <= total)
 );
 
+-- Whether a learner has paid for their certificate. The course and the final
+-- assessment are free; the certificate (and the public verification page behind
+-- it) is what is charged for. One row per learner per course, not per attempt,
+-- so a retake never charges twice and never needs a second payment recorded.
+--
+-- Payment is taken outside the app and an admin records it, so there is no
+-- insert or update policy: the only way to write this table is
+-- academy_set_certificate_paid() below, which checks is_admin().
+create table if not exists academy_certificate_payments (
+  user_id   uuid not null references profiles(id) on delete cascade,
+  course_id text not null,
+  paid_at   timestamptz not null default now(),
+  marked_by uuid references profiles(id) on delete set null,
+  primary key (user_id, course_id)
+);
+
 -- -----------------------------------------------------------------------------
 -- Guards
 -- -----------------------------------------------------------------------------
@@ -188,8 +204,12 @@ $fn$;
 --
 -- Counts rather than a verdict: the course's shape lives in the front end, so
 -- VerifyCertificate.jsx is what compares them against it.
-create or replace function academy_verify_certificate(p_course_id text, p_attempt_id uuid)
+-- Dropped first because the columns it returns changed: create or replace
+-- cannot alter a function's result type.
+drop function if exists academy_verify_certificate(text, uuid);
+create function academy_verify_certificate(p_course_id text, p_attempt_id uuid)
 returns table (
+  paid           boolean,
   full_name      text,
   score          integer,
   total          integer,
@@ -202,10 +222,24 @@ security definer
 stable
 set search_path = public
 as $fn$
-  select p.full_name,
-         a.score,
-         a.total,
-         a.created_at,
+  with cert as (
+    select a.*,
+           exists (select 1 from academy_certificate_payments c
+                    where c.user_id = a.user_id and c.course_id = a.course_id) as is_paid
+      from academy_quiz_attempts a
+     where a.id = p_attempt_id
+       and a.course_id = p_course_id
+       and a.assessment_id = 'final'
+       and a.passed
+  )
+  -- Nothing but the paid flag until it is paid: an unpaid certificate has not
+  -- been issued, so the person's name and score are not for a stranger holding
+  -- the link to read.
+  select a.is_paid,
+         case when a.is_paid then p.full_name end,
+         case when a.is_paid then a.score end,
+         case when a.is_paid then a.total end,
+         case when a.is_paid then a.created_at end,
          (select count(*)::integer
             from academy_lesson_progress l
            where l.user_id = a.user_id and l.course_id = a.course_id),
@@ -213,12 +247,31 @@ as $fn$
             from academy_quiz_attempts m
            where m.user_id = a.user_id and m.course_id = a.course_id
              and m.passed and m.assessment_id <> 'final')
-    from academy_quiz_attempts a
+    from cert a
     join profiles p on p.id = a.user_id
-   where a.id = p_attempt_id
-     and a.course_id = p_course_id
-     and a.assessment_id = 'final'
-     and a.passed
+$fn$;
+
+-- Record, or take back, that a learner has paid. Admin-only, and raises rather
+-- than returning quietly: unlike the overview, a silent no-op here would look
+-- like a payment had been recorded.
+create or replace function academy_set_certificate_paid(p_user_id uuid, p_course_id text, p_paid boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  if not is_admin() then
+    raise exception 'Only an admin can record a payment';
+  end if;
+  if p_paid then
+    insert into academy_certificate_payments (user_id, course_id, marked_by)
+    values (p_user_id, p_course_id, auth.uid())
+    on conflict (user_id, course_id) do nothing;
+  else
+    delete from academy_certificate_payments where user_id = p_user_id and course_id = p_course_id;
+  end if;
+end
 $fn$;
 
 -- -----------------------------------------------------------------------------
@@ -228,6 +281,7 @@ $fn$;
 alter table academy_lesson_progress   enable row level security;
 alter table academy_quiz_attempts     enable row level security;
 alter table academy_exercise_responses enable row level security;
+alter table academy_certificate_payments enable row level security;
 
 drop policy if exists academy_progress_select on academy_lesson_progress;
 create policy academy_progress_select on academy_lesson_progress
@@ -265,6 +319,11 @@ create policy academy_attempts_delete_admin on academy_quiz_attempts
   for delete to authenticated
   using (is_admin());
 
+drop policy if exists academy_payments_select on academy_certificate_payments;
+create policy academy_payments_select on academy_certificate_payments
+  for select to authenticated
+  using (user_id = auth.uid() or is_admin());
+
 drop policy if exists academy_exercises_select on academy_exercise_responses;
 create policy academy_exercises_select on academy_exercise_responses
   for select to authenticated
@@ -296,4 +355,6 @@ grant select, insert, delete on academy_lesson_progress to authenticated;
 grant select, insert, delete on academy_quiz_attempts to authenticated;
 grant select, insert, update, delete on academy_exercise_responses to authenticated;
 grant execute on function academy_admin_overview(text) to authenticated;
+grant select on academy_certificate_payments to authenticated;
+grant execute on function academy_set_certificate_paid(uuid, text, boolean) to authenticated;
 grant execute on function academy_verify_certificate(text, uuid) to anon, authenticated;

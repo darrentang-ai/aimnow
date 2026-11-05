@@ -5,7 +5,7 @@ import { COURSE_ID, FINAL_ID, allLessonIds, modules } from './content'
 // tables are small per user and the whole course is on screen at once — a
 // sidebar showing every module's state would otherwise mean a query per module.
 export async function loadProgress(userId) {
-  const [lessons, attempts, exercises] = await Promise.all([
+  const [lessons, attempts, exercises, payment] = await Promise.all([
     supabase
       .from('academy_lesson_progress')
       .select('lesson_id, created_at')
@@ -22,13 +22,23 @@ export async function loadProgress(userId) {
       .select('exercise_id, score, total, response')
       .eq('user_id', userId)
       .eq('course_id', COURSE_ID),
+    supabase
+      .from('academy_certificate_payments')
+      .select('paid_at')
+      .eq('user_id', userId)
+      .eq('course_id', COURSE_ID)
+      .maybeSingle(),
   ])
 
   if (lessons.error) return { error: lessons.error }
   if (attempts.error) return { error: attempts.error }
   if (exercises.error) return { error: exercises.error }
+  if (payment.error) return { error: payment.error }
 
   return {
+    // The certificate is charged for; passing the final is not enough on its
+    // own. See academy_certificate_payments in supabase/academy.sql.
+    certificatePaid: Boolean(payment.data),
     // A Set because every lesson row in the sidebar asks the same question.
     completed: new Set((lessons.data ?? []).map((r) => r.lesson_id)),
     attempts: attempts.data ?? [],
