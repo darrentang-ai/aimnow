@@ -13,9 +13,10 @@ import { loadMySummary } from '../academy/summary'
 // COURSE_SHAPE is checked against the real course in development; see the note
 // in src/academy/content/index.js.
 //
-// Deliberately says nothing about credentials. An applicant is on this screen
-// to submit two verified AI certificates for an admin to check, and nothing
-// here should suggest that finishing this course is one of them.
+// Says nothing about credentials because this card is on every dashboard, and
+// only an applicant or manager has any use for that. For them, the certificate
+// counts as one of the two an admin approves: the applicant heading says so,
+// and the form in ManagerDashboard is where it gets added.
 export default function AcademyCard({ userId }) {
   const [summary, setSummary] = useState(null)
 

@@ -177,6 +177,50 @@ as $fn$
    order by 9 desc nulls last
 $fn$;
 
+-- The public face of a certificate: what /verify/:id reads, and what an admin
+-- opens before approving one as a credential. Open to anon because a business
+-- following the link from a project card may not be signed in.
+--
+-- Deliberately narrow, as it answers to anyone holding the link: the name that
+-- is printed on the certificate and the facts about it, never an email or the
+-- attempt history. The attempt id is a random uuid, and only its owner can read
+-- it, so this cannot be used to walk through who has certified.
+--
+-- Counts rather than a verdict: the course's shape lives in the front end, so
+-- VerifyCertificate.jsx is what compares them against it.
+create or replace function academy_verify_certificate(p_course_id text, p_attempt_id uuid)
+returns table (
+  full_name      text,
+  score          integer,
+  total          integer,
+  awarded_at     timestamptz,
+  lessons_done   integer,
+  modules_passed integer
+)
+language sql
+security definer
+stable
+set search_path = public
+as $fn$
+  select p.full_name,
+         a.score,
+         a.total,
+         a.created_at,
+         (select count(*)::integer
+            from academy_lesson_progress l
+           where l.user_id = a.user_id and l.course_id = a.course_id),
+         (select count(distinct m.assessment_id)::integer
+            from academy_quiz_attempts m
+           where m.user_id = a.user_id and m.course_id = a.course_id
+             and m.passed and m.assessment_id <> 'final')
+    from academy_quiz_attempts a
+    join profiles p on p.id = a.user_id
+   where a.id = p_attempt_id
+     and a.course_id = p_course_id
+     and a.assessment_id = 'final'
+     and a.passed
+$fn$;
+
 -- -----------------------------------------------------------------------------
 -- Row-level security
 -- -----------------------------------------------------------------------------
@@ -252,3 +296,4 @@ grant select, insert, delete on academy_lesson_progress to authenticated;
 grant select, insert, delete on academy_quiz_attempts to authenticated;
 grant select, insert, update, delete on academy_exercise_responses to authenticated;
 grant execute on function academy_admin_overview(text) to authenticated;
+grant execute on function academy_verify_certificate(text, uuid) to anon, authenticated;

@@ -15,3 +15,10 @@ export function isVerificationLink(url) {
   }
   return parsed.protocol === 'https:'
 }
+
+// An Academy certificate goes through the same admin approval as any other,
+// rather than being approved automatically on a pass. Attempts are written by
+// the browser (see academy_set_passed() in supabase/academy.sql), so a pass on
+// its own is not proof enough to hand out half of the gate to the network.
+export const ACADEMY_CERTIFICATE_NAME = 'AIM Now Academy: Generative AI Fundamentals'
+export const academyCertificatePath = (attemptId) => `/verify/${attemptId}`

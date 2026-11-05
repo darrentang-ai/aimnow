@@ -9,6 +9,9 @@ const PortalApp = lazy(() => import('./portal/PortalApp'))
 // Same reasoning, and separately: the course content is a few hundred KB of
 // text nobody browsing the marketing page should download.
 const AcademyApp = lazy(() => import('./academy/AcademyApp'))
+// Its own route rather than under /academy: that whole tree is members-only,
+// and this page has to open for a business with no account.
+const VerifyCertificate = lazy(() => import('./academy/VerifyCertificate'))
 
 export default function App() {
   return (
@@ -30,6 +33,14 @@ export default function App() {
         element={
           <Suspense fallback={<div className="min-h-screen bg-ink-900" />}>
             <AcademyApp />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/verify/:id"
+        element={
+          <Suspense fallback={<div className="min-h-screen bg-ink-900" />}>
+            <VerifyCertificate />
           </Suspense>
         }
       />

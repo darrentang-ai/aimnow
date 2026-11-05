@@ -23,11 +23,15 @@ export async function loadMySummary(userId) {
       .eq('course_id', COURSE_ID)
       .eq('assessment_id', FINAL_ID)
       .eq('passed', true)
+      // The first pass, so a retake can't change the id. It is the certificate's
+      // verification link, and an admin's approval is tied to that link.
+      .order('created_at', { ascending: true })
       .limit(1),
   ])
 
   const error = lessons.error ?? final.error
   if (error) return { error }
 
-  return { lessonsDone: lessons.count ?? 0, certified: (final.data ?? []).length > 0 }
+  const finalAttemptId = final.data?.[0]?.id ?? null
+  return { lessonsDone: lessons.count ?? 0, certified: finalAttemptId !== null, finalAttemptId }
 }

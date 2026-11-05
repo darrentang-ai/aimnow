@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { loadMySummary } from '../academy/summary'
 import AcademyCard from './AcademyCard'
-import { isVerificationLink } from './certificates'
+import { ACADEMY_CERTIFICATE_NAME, academyCertificatePath, isVerificationLink } from './certificates'
 import { loadAchievements, loadProjects, saveCertificates, savePersonalProjects } from './data'
 import MessagesSection from './MessagesSection'
 import ProjectCard from './ProjectCard'
@@ -11,6 +13,7 @@ import { Alert, Empty, PageHead } from './ui'
 function Achievements({ userId, completedCount }) {
   const [certificates, setCertificates] = useState(null)
   const [personalProjects, setPersonalProjects] = useState([])
+  const [academyPath, setAcademyPath] = useState(null)
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
@@ -28,6 +31,20 @@ function Achievements({ userId, completedCount }) {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    let cancelled = false
+    loadMySummary(userId).then((result) => {
+      // Silent on failure, as on the Academy card: without it they simply
+      // don't get the shortcut, and can't be said to have lost anything.
+      if (!cancelled && !result.error && result.certified) {
+        setAcademyPath(academyCertificatePath(result.finalAttemptId))
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
 
   const persist = async (next) => {
     setBusy(true)
@@ -66,6 +83,14 @@ function Achievements({ userId, completedCount }) {
   }
 
   const remove = (target) => persist(certificates.filter((c) => c.url !== target.url))
+
+  // Built from the current origin so the link works on whichever site it was
+  // added from. Goes in unapproved like any other; see the note in certificates.js.
+  const addAcademy = () =>
+    persist([...certificates, { name: ACADEMY_CERTIFICATE_NAME, url: `${window.location.origin}${academyPath}` }])
+
+  // endsWith so one added on the test site isn't offered again on the live one.
+  const canAddAcademy = academyPath && certificates?.every((c) => !c.url.endsWith(academyPath))
 
   return (
     <section className="mt-12">
@@ -129,6 +154,22 @@ function Achievements({ userId, completedCount }) {
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {canAddAcademy && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-glow/20 bg-cyan-glow/5 p-3">
+                  <p className="min-w-0 flex-1 text-xs leading-relaxed text-slate-300">
+                    You've earned your AIM Now Academy certificate. Add it here and it counts once we've checked it.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={addAcademy}
+                    disabled={busy}
+                    className="btn-ghost !px-5 !py-2 !text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Add certificate
+                  </button>
+                </div>
               )}
 
               <form onSubmit={add} className="mt-4 space-y-2">
@@ -328,9 +369,18 @@ export default function ManagerDashboard({ userId, role = 'manager' }) {
       <PageHead
         title={isApplicant ? 'Your application' : 'Assigned to you'}
         sub={
-          isApplicant
-            ? "Add your AI certificates below. We check each link ourselves, and once two are approved you join the network and can be matched with projects."
-            : 'Projects AIM Now has matched you with.'
+          isApplicant ? (
+            <>
+              Add your AI certificates below. We check each link ourselves, and once two are approved you join the
+              network and can be matched with projects. The{' '}
+              <Link to="/academy" className="font-semibold text-cyan-glow hover:underline">
+                AIM Now Academy certification course
+              </Link>
+              , included with your account, counts as one of the two.
+            </>
+          ) : (
+            'Projects AIM Now has matched you with.'
+          )
         }
       />
       {error && <Alert>{error}</Alert>}
@@ -353,8 +403,9 @@ export default function ManagerDashboard({ userId, role = 'manager' }) {
       {/* Only once the project list has loaded, so the count isn't briefly 0. */}
       {projects !== null && <Achievements userId={userId} completedCount={completedCount} />}
 
-      {/* After the certificates form rather than before it: an applicant is
-          here to submit credentials, and the course is not one of them. */}
+      {/* After the certificates form rather than before it: most of an
+          applicant's credentials come from elsewhere, and the heading already
+          links here for anyone who needs the course. */}
       <AcademyCard userId={userId} />
       <MessagesSection userId={userId} />
     </>
