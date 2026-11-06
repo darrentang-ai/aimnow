@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { canInstall, promptInstall } from '../lib/pwaInstall'
+import CountrySelect from './CountrySelect'
 import { Alert, Field } from './ui'
 
 // Local-only escape hatch. Supabase's built-in mailer allows a handful of
@@ -104,6 +105,7 @@ export default function SignIn() {
   const [email, setEmail] = useState(remembered)
   const [fullName, setFullName] = useState('')
   const [company, setCompany] = useState('')
+  const [country, setCountry] = useState('')
   // /portal?as=manager preselects the AI Manager option, so a link that
   // promised "become an AI Manager" lands on a form already set to it.
   //
@@ -178,6 +180,10 @@ export default function SignIn() {
         setError('Enter your company name.')
         return
       }
+      if (!country) {
+        setError('Choose your country.')
+        return
+      }
     }
 
     setSending(true)
@@ -197,7 +203,7 @@ export default function SignIn() {
         // the browser controls, so it states an intent rather than granting
         // anything. Both manager options collapse to the one value the check
         // constraint allows — see isManagerIntent above.
-        data: { full_name: fullName, company, signup_as: isManagerIntent ? 'manager' : 'business' },
+        data: { full_name: fullName, company, country, signup_as: isManagerIntent ? 'manager' : 'business' },
       },
     })
     setSending(false)
@@ -375,6 +381,14 @@ export default function SignIn() {
                 className="input"
                 placeholder="Acme Ltd"
               />
+            </Field>
+          )}
+          {/* Everyone is asked, and only the person and AIM Now can see it —
+              profile_private in supabase/country.sql. Said here because a
+              location field with no reason given reads as tracking. */}
+          {!signingIn && (
+            <Field label="Country" required hint="Only visible to you and the AIM Now team.">
+              <CountrySelect value={country} onChange={setCountry} required />
             </Field>
           )}
           <button type="submit" disabled={sending} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-70">

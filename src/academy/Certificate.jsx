@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Logo from '../components/Logo'
 import { FINAL_ID, course, totalLessons } from './content'
+import { CERTIFICATE_PRICE } from './ids'
 import { bestAttempt, courseState } from './progress'
 
 const fmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -31,8 +32,9 @@ export default function Certificate({ state, name, email }) {
       <div className="max-w-2xl">
         <h1 className="font-display text-2xl font-700 text-white">Course complete</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
-          You have passed the final assessment. Your certificate is issued once payment is received: send AIM Now a
-          message from your dashboard and we will arrange it. It appears here as soon as we have recorded it.
+          You have passed the final assessment. The course and assessment are free; the verified certificate is{' '}
+          {CERTIFICATE_PRICE}. Send AIM Now a message from your dashboard and we will arrange payment. The certificate
+          appears here as soon as we have recorded it.
         </p>
         <Link to="/portal" className="btn-primary mt-6">
           Message AIM Now

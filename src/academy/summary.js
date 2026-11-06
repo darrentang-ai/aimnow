@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { COURSE_ID, FINAL_ID } from './ids'
+import { COURSE_ID, FINAL_ID, MODULE_SHAPE } from './ids'
 
 // One learner's progress in two numbers, for the card on the portal
 // dashboards. Deliberately not loadProgress() from ./progress: that returns
@@ -11,9 +11,11 @@ import { COURSE_ID, FINAL_ID } from './ids'
 // rows cross the wire.
 export async function loadMySummary(userId) {
   const [lessons, final, payment] = await Promise.all([
+    // The ids rather than a bare count: which module someone is up to comes
+    // from them. At most one row per lesson, so still a handful of rows.
     supabase
       .from('academy_lesson_progress')
-      .select('*', { count: 'exact', head: true })
+      .select('lesson_id')
       .eq('user_id', userId)
       .eq('course_id', COURSE_ID),
     supabase
@@ -39,5 +41,18 @@ export async function loadMySummary(userId) {
   if (error) return { error }
 
   const finalAttemptId = final.data?.[0]?.id ?? null
-  return { lessonsDone: lessons.count ?? 0, certified: finalAttemptId !== null, finalAttemptId, paid: Boolean(payment.data) }
+  const done = new Set((lessons.data ?? []).map((r) => r.lesson_id))
+  // The first module with a lesson still open, 1-based; null once every lesson
+  // is read and only the final is left.
+  const idx = MODULE_SHAPE.findIndex((m) => {
+    const read = [...done].filter((id) => id.startsWith(`${m.slug}/`)).length
+    return read < m.lessons
+  })
+  return {
+    lessonsDone: done.size,
+    resumeModule: idx === -1 ? null : idx + 1,
+    certified: finalAttemptId !== null,
+    finalAttemptId,
+    paid: Boolean(payment.data),
+  }
 }

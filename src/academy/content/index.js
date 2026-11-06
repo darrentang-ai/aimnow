@@ -1,4 +1,4 @@
-import { COURSE_ID, COURSE_SHAPE, FINAL_ID, FINAL_PASS_MARK } from '../ids'
+import { COURSE_ID, COURSE_SHAPE, FINAL_ID, FINAL_PASS_MARK, MODULE_SHAPE } from '../ids'
 import module1 from './module1'
 import module2 from './module2'
 import module3 from './module3'
@@ -228,6 +228,14 @@ if (import.meta.env.DEV && (modules.length !== COURSE_SHAPE.modules || totalLess
     `COURSE_SHAPE in src/academy/ids.js says ${COURSE_SHAPE.modules} modules and ${COURSE_SHAPE.lessons} lessons, ` +
       `but the content has ${modules.length} and ${totalLessons}. Update ids.js to match.`
   )
+}
+
+if (
+  import.meta.env.DEV &&
+  (MODULE_SHAPE.length !== modules.length ||
+    MODULE_SHAPE.some((m, i) => m.slug !== modules[i].slug || m.title !== modules[i].title || m.lessons !== modules[i].lessons.length))
+) {
+  throw new Error('MODULE_SHAPE in src/academy/ids.js does not match the modules in this course. Update it.')
 }
 
 export const totalMinutes = modules.reduce(

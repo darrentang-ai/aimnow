@@ -23,6 +23,7 @@ import {
   setProjectStatus,
 } from './data'
 import Broadcast from './Broadcast'
+import { countryName } from './countries'
 import ProjectCard from './ProjectCard'
 import Thread from './Thread'
 import { Alert, Empty, PageHead } from './ui'
@@ -69,6 +70,8 @@ function sameCounts(a, b) {
   const keys = Object.keys(a)
   return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k])
 }
+
+const NO_COUNTRY = '__none__'
 
 function matchesPerson(person, needle) {
   if (!needle) return true
@@ -318,6 +321,7 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, open, onToggle, onDon
   // What's behind the disclosure, said in one line, so opening a row is never
   // a guess.
   const summary = [
+    person.country && countryName(person.country),
     certificates.length &&
       `${approvedCount(certificates)}/${certificates.length} certificate${certificates.length === 1 ? '' : 's'} approved`,
     personalProjects.length && `${personalProjects.length} personal project${personalProjects.length === 1 ? '' : 's'}`,
@@ -578,6 +582,8 @@ function People({
   currentUserId,
   filter,
   onFilter,
+  country,
+  onCountry,
   query,
   onQuery,
   onChanged,
@@ -606,6 +612,9 @@ function People({
       if (filter === 'posted') return projectOwnerIds.has(p.id)
       return p.role === filter
     }
+    // '' is everyone; NO_COUNTRY is the people who have not given one yet,
+    // which is most of the list until the dashboard prompt has been seen.
+    const matchesCountry = (p) => !country || (country === NO_COUNTRY ? !p.country : p.country === country)
     return (people ?? []).filter((p) => {
       if (!matchesPerson(p, needle)) return false
       // An open row stays, even once it stops matching. Acting on someone is
@@ -616,9 +625,20 @@ function People({
       //
       // Search is not exempted: typing a new query is asking for something
       // else, where dropping the old row is the point.
-      return matchesFilter(p) || openIds.has(p.id)
+      return (matchesFilter(p) && matchesCountry(p)) || openIds.has(p.id)
     })
-  }, [people, unreadByPerson, projectOwnerIds, filter, query, openIds])
+  }, [people, unreadByPerson, projectOwnerIds, filter, country, query, openIds])
+
+  // Only countries somebody actually has, most common first, so the list is as
+  // long as the network is wide rather than 249 entries with almost no matches.
+  const countryOptions = useMemo(() => {
+    const tally = {}
+    for (const p of people ?? []) if (p.country) tally[p.country] = (tally[p.country] ?? 0) + 1
+    return Object.entries(tally)
+      .map(([code, n]) => ({ code, n, name: countryName(code) }))
+      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name))
+  }, [people])
+  const noCountryCount = (people ?? []).filter((p) => !p.country).length
 
   const counts = useMemo(() => {
     const all = people ?? []
@@ -669,6 +689,33 @@ function People({
                 {label} <span className="text-slate-600">{counts[value] ?? 0}</span>
               </button>
             ))}
+          </div>
+          {/* Narrows within whichever role filter is on, so "Managers" plus a
+              country is the managers in that country. */}
+          <div className="mb-4 flex items-center gap-2">
+            <label htmlFor="people-country" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Country
+            </label>
+            <select
+              id="people-country"
+              value={country}
+              onChange={(e) => onCountry(e.target.value)}
+              className="input !w-auto !py-1.5 !text-xs"
+            >
+              <option value="" className="bg-ink-800">
+                All countries
+              </option>
+              {countryOptions.map((c) => (
+                <option key={c.code} value={c.code} className="bg-ink-800">
+                  {c.name} ({c.n})
+                </option>
+              ))}
+              {noCountryCount > 0 && (
+                <option value={NO_COUNTRY} className="bg-ink-800">
+                  No country yet ({noCountryCount})
+                </option>
+              )}
+            </select>
           </div>
         </>
       )}
@@ -798,6 +845,7 @@ export default function AdminDashboard({ userId }) {
   const [error, setError] = useState('')
   const [tab, setTab] = useState('projects')
   const [peopleFilter, setPeopleFilter] = useState('all')
+  const [peopleCountry, setPeopleCountry] = useState('')
   const [peopleQuery, setPeopleQuery] = useState('')
   const [projectQuery, setProjectQuery] = useState('')
   // Closed only ever grows, and it's the group you almost never need. Kept out
@@ -1025,6 +1073,8 @@ export default function AdminDashboard({ userId }) {
           projectOwnerIds={projectOwnerIds}
           currentUserId={userId}
           filter={peopleFilter}
+          country={peopleCountry}
+          onCountry={setPeopleCountry}
           onFilter={setPeopleFilter}
           query={peopleQuery}
           onQuery={setPeopleQuery}

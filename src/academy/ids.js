@@ -20,3 +20,35 @@ export const FINAL_ID = 'final'
 // lessons to count them. content/index.js checks these against the authored
 // course in development, so the two cannot drift silently.
 export const COURSE_SHAPE = { modules: 6, lessons: 24 }
+
+// The modules in order, with how many lessons each has, so the card can say
+// which module someone is up to ("Resume: Module 3") from their completed
+// lesson ids alone. Checked against the authored course in development, like
+// COURSE_SHAPE.
+export const MODULE_SHAPE = [
+  { slug: 'what-generative-ai-is', title: 'What Generative AI Actually Is', lessons: 4 },
+  { slug: 'how-models-work', title: 'How Large Language Models Work', lessons: 4 },
+  { slug: 'prompting', title: 'Prompting as a Working Skill', lessons: 4 },
+  { slug: 'limits-and-quality', title: 'Limits, Failure Modes and Quality', lessons: 4 },
+  { slug: 'your-data-and-tools', title: 'Connecting Models to Your Data and Tools', lessons: 4 },
+  { slug: 'responsible-adoption', title: 'Responsible Adoption at Work', lessons: 4 },
+]
+
+// What someone can do afterwards, rather than what the lessons contain. Shared
+// by the course page and the portal card so the two say the same thing.
+export const COURSE_OUTCOMES = [
+  'Judge where generative AI helps and where it fails',
+  'Brief and evaluate AI work with confidence',
+  'Set sensible policies for adopting it',
+]
+
+// The lessons add up to about 290 minutes, plus the exercises and quizzes. Said
+// as a round number on the card; not checked against the content, so revisit it
+// if lessons are added.
+export const COURSE_HOURS = 5
+
+// The course and the final assessment are free; the certificate is what is
+// charged for. Shown on the Academy card and the applicant heading so that
+// nobody reaches the end and is surprised by it. An admin records the payment
+// — see academy_certificate_payments in supabase/academy.sql.
+export const CERTIFICATE_PRICE = '$39'

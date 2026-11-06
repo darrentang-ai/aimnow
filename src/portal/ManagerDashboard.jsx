@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CERTIFICATE_PRICE } from '../academy/ids'
 import { loadMySummary } from '../academy/summary'
 import AcademyCard from './AcademyCard'
+import CountryCard from './CountryCard'
 import { ACADEMY_CERTIFICATE_NAME, academyCertificatePath, isVerificationLink } from './certificates'
 import { loadAchievements, loadProjects, saveCertificates, savePersonalProjects } from './data'
 import MessagesSection from './MessagesSection'
@@ -377,8 +379,8 @@ export default function ManagerDashboard({ userId, role = 'manager' }) {
               network and can be matched with projects. The{' '}
               <Link to="/academy" className="font-semibold text-cyan-glow hover:underline">
                 AIM Now Academy certification course
-              </Link>
-              , included with your account, counts as one of the two.
+              </Link>{' '}
+              is free to take, and its verified certificate ({CERTIFICATE_PRICE}) counts as one of the two.
             </>
           ) : (
             'Projects AIM Now has matched you with.'
@@ -408,6 +410,7 @@ export default function ManagerDashboard({ userId, role = 'manager' }) {
       {/* After the certificates form rather than before it: most of an
           applicant's credentials come from elsewhere, and the heading already
           links here for anyone who needs the course. */}
+      <CountryCard userId={userId} />
       <AcademyCard userId={userId} />
       <MessagesSection userId={userId} />
     </>

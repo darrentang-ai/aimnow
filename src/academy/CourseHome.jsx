@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { FINAL_PASS_MARK, MODULE_PASS_MARK, course, modules, totalLessons, totalMinutes } from './content'
+import { CERTIFICATE_PRICE, COURSE_OUTCOMES } from './ids'
 import { courseState, finalUnlocked, moduleState } from './progress'
 import { ProgressBar } from './ui'
 
@@ -7,7 +8,7 @@ function Stat({ value, label }) {
   return (
     <div>
       <p className="font-display text-2xl font-700 text-white">{value}</p>
-      <p className="mt-0.5 text-xs uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-0.5 text-xs uppercase tracking-wider text-slate-400">{label}</p>
     </div>
   )
 }
@@ -36,22 +37,36 @@ export default function CourseHome({ state }) {
       <div className="chip">AIM Now Academy</div>
       <h1 className="mt-5 font-display text-3xl font-700 leading-tight text-white sm:text-4xl">{course.title}</h1>
       <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300">{course.subtitle}</p>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">{course.audience}</p>
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">{course.audience}</p>
+
+      {/* What someone can do afterwards, not what the lessons contain. */}
+      <ul className="mt-5 space-y-1.5 text-sm text-slate-200">
+        {COURSE_OUTCOMES.map((o) => (
+          <li key={o} className="flex gap-2.5">
+            <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-glow" />
+            {o}
+          </li>
+        ))}
+      </ul>
 
       <div className="mt-8 flex flex-wrap items-center gap-8">
         <Stat value={modules.length} label="Modules" />
         <Stat value={totalLessons} label="Lessons" />
-        <Stat value={`${Math.round(totalMinutes / 60)} hrs`} label="Reading time" />
-        <Stat value={`${cs.percent}%`} label="Complete" />
+        <Stat value={`${Math.round(totalMinutes / 60)} hrs`} label="Incl. exercises and quizzes" />
+        {/* "Not started" until the first lesson: 0% beside an empty bar reads
+            as a failing score on a first visit, not as a starting line. */}
+        <Stat value={started ? `${cs.percent}%` : 'Not started'} label="Progress" />
       </div>
 
-      <div className="mt-6">
-        <ProgressBar percent={cs.percent} />
-        <p className="mt-2 text-xs text-slate-500">
-          {cs.lessonsDone} of {cs.lessonsTotal} lessons · {cs.modulesComplete} of {cs.modulesTotal} modules finished
-          {cs.finalPassed && ' · final assessment passed'}
-        </p>
-      </div>
+      {started && (
+        <div className="mt-6">
+          <ProgressBar percent={cs.percent} />
+          <p className="mt-2 text-xs text-slate-300">
+            {cs.lessonsDone} of {cs.lessonsTotal} lessons · {cs.modulesComplete} of {cs.modulesTotal} modules finished
+            {cs.finalPassed && ' · final assessment passed'}
+          </p>
+        </div>
+      )}
 
       <div className="mt-7 flex flex-wrap gap-3">
         <Link to={resume} className="btn-primary">
@@ -63,6 +78,14 @@ export default function CourseHome({ state }) {
           </Link>
         )}
       </div>
+      {/* Under the button because it is the one thing being sold, and the
+          course's own page should not be the last place anyone hears of it. */}
+      <p className="mt-3 text-sm text-slate-300">
+        Free course and final assessment · Certificate {CERTIFICATE_PRICE} on passing · Retake as often as you need
+      </p>
+      <p className="mt-1.5 text-xs text-slate-400">
+        Published by AIM Now Academy. Every certificate has a public link anyone can use to check it.
+      </p>
 
       <h2 className="mt-14 font-display text-xl font-700 text-white">Course outline</h2>
       <ol className="mt-5 space-y-3">
@@ -97,7 +120,7 @@ export default function CourseHome({ state }) {
                 </div>
                 <div className="mt-4 flex items-center gap-3">
                   <ProgressBar percent={Math.round((ms.lessonsDone / ms.lessonsTotal) * 100)} className="max-w-xs" />
-                  <span className="shrink-0 text-xs text-slate-500">
+                  <span className="shrink-0 text-xs text-slate-400">
                     {ms.lessonsDone}/{ms.lessonsTotal} lessons{ms.quizPassed ? ' · quiz passed' : ''}
                   </span>
                 </div>
@@ -112,7 +135,8 @@ export default function CourseHome({ state }) {
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
           Each module ends in a short quiz you need {MODULE_PASS_MARK}% on to clear. Once every module is finished, the
           final assessment unlocks — {course.final.questions.length} questions across the whole course, {FINAL_PASS_MARK}
-          % to pass. Retakes are unlimited, and every attempt is kept on your record.
+          % to pass. Retakes are unlimited, and every attempt is kept on your record. The course and the final
+          assessment are free; the verified certificate, issued once you pass, is {CERTIFICATE_PRICE}.
         </p>
       </div>
     </div>
