@@ -81,6 +81,7 @@ export default function AcademyApp() {
         attempts: progress.attempts,
         exercises: progress.exercises,
         certificatePaid: progress.certificatePaid,
+        paymentRequestedAt: progress.paymentRequestedAt,
       })
     })()
     return () => {

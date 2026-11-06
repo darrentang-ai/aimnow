@@ -181,7 +181,7 @@ function Achievements({ userId, completedCount }) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="input !py-2 !text-xs"
-                  placeholder="Certificate name, e.g. Generative AI Leader"
+                  placeholder="Certificate name, e.g. Generative AI Fundamentals"
                 />
                 <div className="flex flex-wrap gap-2">
                   <input

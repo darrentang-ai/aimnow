@@ -109,6 +109,16 @@ create table if not exists academy_certificate_payments (
   primary key (user_id, course_id)
 );
 
+-- One request per learner per course, so the button on the certificate screen
+-- can say "Requested on <date>" and cannot be pressed twice. Written only by
+-- academy_request_payment() below.
+create table if not exists academy_payment_requests (
+  user_id      uuid not null references profiles(id) on delete cascade,
+  course_id    text not null,
+  requested_at timestamptz not null default now(),
+  primary key (user_id, course_id)
+);
+
 -- -----------------------------------------------------------------------------
 -- Guards
 -- -----------------------------------------------------------------------------
@@ -251,6 +261,65 @@ as $fn$
     join profiles p on p.id = a.user_id
 $fn$;
 
+-- A learner asking for the payment link. Creates the request and drops a fixed
+-- message into their own thread, which is where an admin already looks, so
+-- there is nothing for the learner to type and nothing for them to get wrong.
+-- The text is built here from the account, never taken from the client.
+--
+-- Only after the final is passed: the certificate is what is being paid for.
+-- Asking again returns the first request's date and sends nothing.
+create or replace function academy_request_payment(p_course_id text)
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_user  uuid := auth.uid();
+  v_when  timestamptz;
+  v_name  text;
+  v_email text;
+  v_title text := case p_course_id when 'genai-fundamentals' then 'Generative AI Fundamentals' else p_course_id end;
+begin
+  if v_user is null then
+    raise exception 'Sign in first';
+  end if;
+
+  if not exists (
+    select 1 from academy_quiz_attempts a
+     where a.user_id = v_user and a.course_id = p_course_id
+       and a.assessment_id = 'final' and a.passed
+  ) then
+    raise exception 'Pass the final assessment first';
+  end if;
+
+  insert into academy_payment_requests (user_id, course_id)
+  values (v_user, p_course_id)
+  on conflict (user_id, course_id) do nothing
+  returning requested_at into v_when;
+
+  if v_when is null then
+    select requested_at into v_when from academy_payment_requests
+     where user_id = v_user and course_id = p_course_id;
+    return v_when;
+  end if;
+
+  select coalesce(p.full_name, 'No name on file'), u.email::text
+    into v_name, v_email
+    from profiles p join auth.users u on u.id = p.id
+   where p.id = v_user;
+
+  insert into messages (person_id, sender_id, body)
+  values (
+    v_user, v_user,
+    'Payment link request. ' || v_name || ' (' || v_email || ') has passed ' || v_title ||
+    ' and is asking for the certificate payment link.'
+  );
+
+  return v_when;
+end
+$fn$;
+
 -- Record, or take back, that a learner has paid. Admin-only, and raises rather
 -- than returning quietly: unlike the overview, a silent no-op here would look
 -- like a payment had been recorded.
@@ -282,6 +351,7 @@ alter table academy_lesson_progress   enable row level security;
 alter table academy_quiz_attempts     enable row level security;
 alter table academy_exercise_responses enable row level security;
 alter table academy_certificate_payments enable row level security;
+alter table academy_payment_requests enable row level security;
 
 drop policy if exists academy_progress_select on academy_lesson_progress;
 create policy academy_progress_select on academy_lesson_progress
@@ -324,6 +394,11 @@ create policy academy_payments_select on academy_certificate_payments
   for select to authenticated
   using (user_id = auth.uid() or is_admin());
 
+drop policy if exists academy_requests_select on academy_payment_requests;
+create policy academy_requests_select on academy_payment_requests
+  for select to authenticated
+  using (user_id = auth.uid() or is_admin());
+
 drop policy if exists academy_exercises_select on academy_exercise_responses;
 create policy academy_exercises_select on academy_exercise_responses
   for select to authenticated
@@ -356,5 +431,7 @@ grant select, insert, delete on academy_quiz_attempts to authenticated;
 grant select, insert, update, delete on academy_exercise_responses to authenticated;
 grant execute on function academy_admin_overview(text) to authenticated;
 grant select on academy_certificate_payments to authenticated;
+grant select on academy_payment_requests to authenticated;
+grant execute on function academy_request_payment(text) to authenticated;
 grant execute on function academy_set_certificate_paid(uuid, text, boolean) to authenticated;
 grant execute on function academy_verify_certificate(text, uuid) to anon, authenticated;

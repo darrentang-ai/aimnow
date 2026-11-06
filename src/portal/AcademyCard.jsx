@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import Logo from '../components/Logo'
+import CertificatePreview from '../academy/CertificatePreview'
 import { CERTIFICATE_PRICE, COURSE_HOURS, COURSE_OUTCOMES, COURSE_SHAPE, MODULE_SHAPE } from '../academy/ids'
 import { loadMySummary } from '../academy/summary'
 
@@ -21,27 +21,6 @@ import { loadMySummary } from '../academy/summary'
 // On every dashboard, but the certificate counts towards joining the network
 // only for an applicant or manager: the applicant heading in ManagerDashboard
 // is where that is said.
-
-// A stylised certificate, name blurred: the thing at the end, shown at the
-// start. Decorative, so hidden from assistive tech.
-function CertificatePreview() {
-  return (
-    <div
-      aria-hidden="true"
-      className="hidden w-52 shrink-0 rotate-2 rounded-xl border border-cyan-glow/25 bg-gradient-to-b from-aim-blue/15 to-ink-900 p-4 text-center shadow-glow sm:block"
-    >
-      <Logo className="mx-auto h-3.5 w-auto" />
-      <p className="mt-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-cyan-glow">Certificate of completion</p>
-      <p className="mt-3 text-[9px] text-slate-500">This certifies that</p>
-      <p className="mt-1 select-none font-display text-sm font-700 text-white blur-[5px]">Your Name Here</p>
-      <p className="mt-2 text-[9px] text-slate-500">has completed</p>
-      <p className="mt-0.5 font-display text-[11px] font-700 text-white">Generative AI Fundamentals</p>
-      <div className="mt-3 border-t border-white/10 pt-2 text-[8px] uppercase tracking-wider text-slate-500">
-        AIM Now Academy
-      </div>
-    </div>
-  )
-}
 
 export default function AcademyCard({ userId }) {
   const [summary, setSummary] = useState(null)
@@ -139,7 +118,7 @@ export default function AcademyCard({ userId }) {
               {label}
             </Link>
           </div>
-          <CertificatePreview />
+          <CertificatePreview className="hidden sm:block" />
         </div>
       </div>
     </section>

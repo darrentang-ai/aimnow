@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { loadCertificatePayments, setCertificatePaid } from '../academy/admin'
+import { loadCertificatePayments, loadPaymentRequests, setCertificatePaid } from '../academy/admin'
 import { modules, totalLessons } from '../academy/content'
 import { formatDate } from './data'
 import { Alert, Empty } from './ui'
@@ -53,6 +53,7 @@ function StageBadge({ learner }) {
 export default function AcademyProgress({ learners, error }) {
   const [query, setQuery] = useState('')
   const [paid, setPaid] = useState(new Set())
+  const [requested, setRequested] = useState({})
   const [busyId, setBusyId] = useState(null)
   const [payError, setPayError] = useState('')
 
@@ -60,6 +61,11 @@ export default function AcademyProgress({ learners, error }) {
     loadCertificatePayments().then((r) => {
       if (r.error) setPayError(r.error.message)
       else setPaid(r.paid)
+    })
+    // Quiet on failure: the marker is a convenience, and the message in the
+    // person's thread says the same thing.
+    loadPaymentRequests().then((r) => {
+      if (!r.error) setRequested(r.requested)
     })
   }, [])
 
@@ -103,6 +109,7 @@ export default function AcademyProgress({ learners, error }) {
 
   const certified = learners.filter((l) => l.final_passed).length
   const awaitingPayment = learners.filter((l) => l.final_passed && !paid.has(l.user_id)).length
+  const requestedCount = learners.filter((l) => l.final_passed && !paid.has(l.user_id) && requested[l.user_id]).length
   const finished = learners.filter((l) => l.lessons_done >= totalLessons).length
 
   return (
@@ -116,7 +123,7 @@ export default function AcademyProgress({ learners, error }) {
         <Stat value={learners.length} label="Learners started" hint="Anyone who has completed a lesson or sat a quiz." />
         <Stat value={finished} label="Finished the reading" hint={`All ${totalLessons} lessons marked complete.`} />
         <Stat value={certified} label="Certified" hint="Passed the final assessment." />
-        <Stat value={awaitingPayment} label="Awaiting payment" hint="Passed, but the certificate is not paid for." />
+        <Stat value={awaitingPayment} label="Awaiting payment" hint={`Passed, but not paid for. ${requestedCount} asked for the link.`} />
       </div>
 
       {learners.length === 0 ? (
@@ -204,6 +211,13 @@ export default function AcademyProgress({ learners, error }) {
                           </button>
                         ) : (
                           <span className="text-xs text-slate-600">—</span>
+                        )}
+                        {/* Asked for the link and not yet paid: the one state an
+                            admin has to act on. Gone once marked paid. */}
+                        {l.final_passed && !paid.has(l.user_id) && requested[l.user_id] && (
+                          <p className="mt-1.5 text-[11px] font-semibold text-amber-300">
+                            Requested {formatDate(requested[l.user_id])}
+                          </p>
                         )}
                       </td>
                     </tr>

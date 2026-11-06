@@ -1,13 +1,29 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Logo from '../components/Logo'
+import CertificatePreview from './CertificatePreview'
 import { FINAL_ID, course, totalLessons } from './content'
 import { CERTIFICATE_PRICE } from './ids'
-import { bestAttempt, courseState } from './progress'
+import { bestAttempt, courseState, requestPaymentLink } from './progress'
 
 const fmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
 export default function Certificate({ state, name, email }) {
   const cs = courseState(state)
+  // Seeded from the record, then set locally on a successful request so the
+  // button flips without a reload.
+  const [requestedAt, setRequestedAt] = useState(state.paymentRequestedAt ?? null)
+  const [requesting, setRequesting] = useState(false)
+  const [requestError, setRequestError] = useState('')
+
+  const request = async () => {
+    setRequesting(true)
+    setRequestError('')
+    const { requestedAt: when, error } = await requestPaymentLink()
+    setRequesting(false)
+    if (error) setRequestError(error.message)
+    else setRequestedAt(when)
+  }
 
   if (!cs.certified) {
     return (
@@ -29,19 +45,41 @@ export default function Certificate({ state, name, email }) {
   // certificate is what is charged for, and an admin records the payment.
   if (!state.certificatePaid) {
     return (
-      <div className="max-w-2xl">
-        <h1 className="font-display text-2xl font-700 text-white">Course complete</h1>
-        <p className="mt-3 text-sm leading-relaxed text-slate-400">
-          You have passed the final assessment. The course and assessment are free; the verified certificate is{' '}
-          {CERTIFICATE_PRICE}. Send AIM Now a message from your dashboard and we will arrange payment. The certificate
-          appears here as soon as we have recorded it.
-        </p>
-        <Link to="/portal" className="btn-primary mt-6">
-          Message AIM Now
-        </Link>
-        <Link to="/academy" className="btn-ghost ml-3 mt-6">
-          Back to the course
-        </Link>
+      <div className="flex max-w-3xl flex-wrap items-center justify-between gap-10">
+        <div className="min-w-0 max-w-md">
+          <h1 className="font-display text-2xl font-700 text-white">Course complete</h1>
+          <p className="mt-3 text-sm leading-relaxed text-slate-300">
+            You have passed the final assessment. The course and assessment are free; the verified certificate is{' '}
+            <span className="font-semibold text-white">{CERTIFICATE_PRICE}</span>. Issued within 24 hours of payment.
+          </p>
+          {/* A fixed request, not a message box: the function builds the text
+              from the account, so there is nothing to type, and it can only be
+              sent once. See academy_request_payment in supabase/academy.sql. */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              onClick={request}
+              disabled={requesting || Boolean(requestedAt)}
+              className="btn-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+            >
+              {requestedAt
+                ? `Requested on ${fmt.format(new Date(requestedAt))}`
+                : requesting
+                  ? 'Requesting…'
+                  : 'Request payment link'}
+            </button>
+            <Link to="/academy" className="btn-ghost">
+              Back to the course
+            </Link>
+          </div>
+          {requestedAt && (
+            <p className="mt-3 text-xs leading-relaxed text-slate-400">
+              We have your request and will send the link to your messages in the portal. The certificate appears
+              here once payment is recorded.
+            </p>
+          )}
+          {requestError && <p className="mt-3 text-sm text-red-300">{requestError}</p>}
+        </div>
+        <CertificatePreview />
       </div>
     )
   }

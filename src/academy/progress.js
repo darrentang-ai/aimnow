@@ -5,7 +5,7 @@ import { COURSE_ID, FINAL_ID, allLessonIds, modules } from './content'
 // tables are small per user and the whole course is on screen at once — a
 // sidebar showing every module's state would otherwise mean a query per module.
 export async function loadProgress(userId) {
-  const [lessons, attempts, exercises, payment] = await Promise.all([
+  const [lessons, attempts, exercises, payment, request] = await Promise.all([
     supabase
       .from('academy_lesson_progress')
       .select('lesson_id, created_at')
@@ -28,17 +28,27 @@ export async function loadProgress(userId) {
       .eq('user_id', userId)
       .eq('course_id', COURSE_ID)
       .maybeSingle(),
+    supabase
+      .from('academy_payment_requests')
+      .select('requested_at')
+      .eq('user_id', userId)
+      .eq('course_id', COURSE_ID)
+      .maybeSingle(),
   ])
 
   if (lessons.error) return { error: lessons.error }
   if (attempts.error) return { error: attempts.error }
   if (exercises.error) return { error: exercises.error }
   if (payment.error) return { error: payment.error }
+  if (request.error) return { error: request.error }
 
   return {
     // The certificate is charged for; passing the final is not enough on its
     // own. See academy_certificate_payments in supabase/academy.sql.
     certificatePaid: Boolean(payment.data),
+    // When they asked for the payment link, or null. The certificate screen
+    // shows it and disables the button.
+    paymentRequestedAt: request.data?.requested_at ?? null,
     // A Set because every lesson row in the sidebar asks the same question.
     completed: new Set((lessons.data ?? []).map((r) => r.lesson_id)),
     attempts: attempts.data ?? [],
@@ -46,6 +56,13 @@ export async function loadProgress(userId) {
     // never iterates them.
     exercises: Object.fromEntries((exercises.data ?? []).map((r) => [r.exercise_id, r])),
   }
+}
+
+// Asks AIM Now for the payment link. The function builds the message itself, so
+// there is no text to send; see academy_request_payment in supabase/academy.sql.
+export async function requestPaymentLink() {
+  const { data, error } = await supabase.rpc('academy_request_payment', { p_course_id: COURSE_ID })
+  return { requestedAt: data ?? null, error }
 }
 
 // upsert rather than insert: finishing a lesson twice is a normal thing for a

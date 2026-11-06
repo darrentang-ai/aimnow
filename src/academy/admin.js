@@ -15,6 +15,16 @@ export async function loadCertificatePayments() {
   return { paid: new Set((data ?? []).map((r) => r.user_id)), error }
 }
 
+// When each learner asked for the payment link, keyed by user id. Read under the
+// admin's select policy on academy_payment_requests.
+export async function loadPaymentRequests() {
+  const { data, error } = await supabase
+    .from('academy_payment_requests')
+    .select('user_id, requested_at')
+    .eq('course_id', COURSE_ID)
+  return { requested: Object.fromEntries((data ?? []).map((r) => [r.user_id, r.requested_at])), error }
+}
+
 export async function setCertificatePaid(userId, paid) {
   const { error } = await supabase.rpc('academy_set_certificate_paid', {
     p_user_id: userId,
