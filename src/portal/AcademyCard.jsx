@@ -48,7 +48,7 @@ export default function AcademyCard({ userId }) {
       : 'Get your certificate'
     : started
       ? summary.resumeModule
-        ? `Resume: Module ${summary.resumeModule}`
+        ? 'Resume course'
         : 'Take the final assessment'
       : 'Start the course'
 

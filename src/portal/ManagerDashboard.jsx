@@ -378,7 +378,7 @@ export default function ManagerDashboard({ userId, role = 'manager' }) {
               Add your AI certificates below. We check each link ourselves, and once two are approved you join the
               network and can be matched with projects. The{' '}
               <Link to="/academy" className="font-semibold text-cyan-glow hover:underline">
-                AIM Now Academy certification course
+                Generative AI Fundamentals course
               </Link>{' '}
               is free to take, and its verified certificate ({CERTIFICATE_PRICE}) counts as one of the two.
             </>
