@@ -114,7 +114,10 @@ export default function AcademyCard({ userId }) {
               </div>
             )}
 
-            <Link to="/academy" className="btn-primary mt-5 !py-2.5 !text-xs">
+            <Link
+              to={summary?.certified ? '/academy/certificate' : '/academy'}
+              className="btn-primary mt-5 !py-2.5 !text-xs"
+            >
               {label}
             </Link>
           </div>
