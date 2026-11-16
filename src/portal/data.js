@@ -220,6 +220,13 @@ export async function deletePerson(personId) {
   return error ? { error } : {}
 }
 
+// Corrects an address that was never confirmed. The function refuses anything
+// else — see supabase/email.sql for why.
+export async function changePersonEmail(personId, email) {
+  const { error } = await supabase.rpc('admin_change_email', { p_person_id: personId, p_new_email: email })
+  return error ? { error } : {}
+}
+
 // Upgrading is a sales conversation rather than a checkout, so a plan is
 // granted here after it is agreed. guard_plan_change() refuses anyone else.
 export async function setProfilePlan(profileId, plan) {

@@ -5,6 +5,7 @@ import { loadAcademyOverview } from '../academy/admin'
 import {
   approvedCount,
   assignProject,
+  changePersonEmail,
   deletePerson,
   deleteProject,
   eligibleToAssign,
@@ -292,6 +293,28 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, emailProblems = [], o
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const isNew = Date.now() - new Date(person.created_at).getTime() < NEW_FOR_MS
 
+  // Fixing a mistyped address. Offered only while it was never confirmed: the
+  // function refuses anything else, and an address someone has signed in with
+  // is theirs. See supabase/email.sql.
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [emailBusy, setEmailBusy] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const canFixEmail = person.email_confirmed === false && person.id !== viewerId
+
+  const saveEmail = async () => {
+    setEmailBusy(true)
+    setEmailError('')
+    const { error } = await changePersonEmail(person.id, newEmail)
+    setEmailBusy(false)
+    if (error) {
+      setEmailError(error.message)
+      return
+    }
+    setEditingEmail(false)
+    onDone()
+  }
+
   const certificates = person.certificates ?? []
   const personalProjects = person.personal_projects ?? []
 
@@ -412,7 +435,49 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, emailProblems = [], o
           <p className="flex items-center gap-2 pl-5 text-xs text-slate-400">
             <span className="truncate">{person.email}</span>
             <CopyButton text={person.email} />
+            {canFixEmail && !editingEmail && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNewEmail(person.email)
+                  setEmailError('')
+                  setEditingEmail(true)
+                }}
+                className="shrink-0 rounded border border-amber-400/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300 transition-colors hover:bg-amber-400/10"
+              >
+                Correct
+              </button>
+            )}
           </p>
+        )}
+        {editingEmail && (
+          <div className="mt-2 pl-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                aria-label="Corrected email address"
+                className="input !w-72 max-w-full !py-1.5 !text-xs"
+              />
+              <button
+                type="button"
+                onClick={saveEmail}
+                disabled={emailBusy || !newEmail.trim() || newEmail.trim().toLowerCase() === person.email.toLowerCase()}
+                className="btn-primary !py-1.5 !text-xs disabled:opacity-50"
+              >
+                {emailBusy ? 'Saving…' : 'Save address'}
+              </button>
+              <button type="button" onClick={() => setEditingEmail(false)} className="btn-ghost !py-1.5 !text-xs">
+                Cancel
+              </button>
+            </div>
+            <p className="mt-1.5 max-w-lg text-[11px] leading-relaxed text-slate-400">
+              Whoever owns the new address can sign in to this account, so check it with them first. They confirm it
+              by signing in with it.
+            </p>
+            {emailError && <p className="mt-1.5 text-xs text-red-300">{emailError}</p>}
+          </div>
         )}
         {emailProblems.map((problem) => (
           <p key={problem} className="pl-5 text-xs font-semibold text-amber-300">
