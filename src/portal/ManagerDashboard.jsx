@@ -4,7 +4,12 @@ import { CERTIFICATE_PRICE } from '../academy/ids'
 import { loadMySummary } from '../academy/summary'
 import AcademyCard from './AcademyCard'
 import CountryCard from './CountryCard'
-import { ACADEMY_CERTIFICATE_NAME, academyCertificatePath, isVerificationLink } from './certificates'
+import {
+  ACADEMY_CERTIFICATE_NAME,
+  ACADEMY_CERTIFICATE_ORIGIN,
+  academyCertificatePath,
+  isVerificationLink,
+} from './certificates'
 import { loadAchievements, loadProjects, saveCertificates, savePersonalProjects } from './data'
 import MessagesSection from './MessagesSection'
 import ProjectCard from './ProjectCard'
@@ -91,7 +96,7 @@ function Achievements({ userId, completedCount }) {
   // Built from the current origin so the link works on whichever site it was
   // added from. Goes in unapproved like any other; see the note in certificates.js.
   const addAcademy = () =>
-    persist([...certificates, { name: ACADEMY_CERTIFICATE_NAME, url: `${window.location.origin}${academyPath}` }])
+    persist([...certificates, { name: ACADEMY_CERTIFICATE_NAME, url: `${ACADEMY_CERTIFICATE_ORIGIN}${academyPath}` }])
 
   // endsWith so one added on the test site isn't offered again on the live one.
   const canAddAcademy = academyPath && certificates?.every((c) => !c.url.endsWith(academyPath))

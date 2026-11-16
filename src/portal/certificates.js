@@ -22,3 +22,9 @@ export function isVerificationLink(url) {
 // its own is not proof enough to hand out half of the gate to the network.
 export const ACADEMY_CERTIFICATE_NAME = 'AIM Now Academy: Generative AI Fundamentals'
 export const academyCertificatePath = (attemptId) => `/verify/${attemptId}`
+
+// The saved link always points at the live site, whichever host it was added
+// from. Built from window.location it would store test.aimnow.io (or
+// localhost) on the profile, and an admin or business opening it later would
+// land on the test site.
+export const ACADEMY_CERTIFICATE_ORIGIN = 'https://aimnow.io'
