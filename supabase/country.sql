@@ -71,6 +71,10 @@ $$;
 -- The admin's People list. Same result shape as before — the profile is still
 -- one jsonb value — with the country merged into it, so the screen needs no
 -- second query and the function stays admin-only.
+--
+-- email_confirmed says whether the person ever followed the sign-in link sent
+-- to that address. An address that never did is the likeliest to be mistyped;
+-- the People tab's "Email issues" filter uses it.
 create or replace function admin_list_people()
 returns table (
   id      uuid,
@@ -82,7 +86,11 @@ security definer
 stable
 set search_path = public
 as $$
-  select p.id, u.email::text, to_jsonb(p) || jsonb_build_object('country', pp.country)
+  select p.id, u.email::text,
+         to_jsonb(p) || jsonb_build_object(
+           'country', pp.country,
+           'email_confirmed', u.email_confirmed_at is not null
+         )
     from profiles p
     join auth.users u on u.id = p.id
     left join profile_private pp on pp.user_id = p.id

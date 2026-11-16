@@ -24,6 +24,7 @@ import {
 } from './data'
 import Broadcast from './Broadcast'
 import { countryName } from './countries'
+import { emailIssues } from './emailChecks'
 import ProjectCard from './ProjectCard'
 import Thread from './Thread'
 import { Alert, Empty, PageHead } from './ui'
@@ -61,6 +62,9 @@ const PEOPLE_FILTERS = [
   // Derived from the projects already loaded for the queue above, so it costs
   // no extra query.
   ['posted', 'With projects'],
+  // Addresses that look wrong: malformed, a typo of a common provider, or the
+  // same inbox as another account. See emailChecks.js.
+  ['email', 'Email issues'],
 ]
 
 // Polling hands back a fresh object every time. Without this the dashboard
@@ -254,7 +258,7 @@ function AssignControls({ project, managers, viewerId, unread = 0, onDone, onThr
 
 // `open` is owned by People rather than held here, because the list needs to
 // know what is open to avoid filtering it away — see visible() below.
-function PersonRow({ person, isSelf, viewerId, unread = 0, open, onToggle, onDone, onThreadRead }) {
+function PersonRow({ person, isSelf, viewerId, unread = 0, emailProblems = [], open, onToggle, onDone, onThreadRead }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   // null until the confirmation is opened — the counts are fetched then, so a
@@ -376,6 +380,11 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, open, onToggle, onDon
           {/* Email is the only thing that tells two people with the same name
               apart, so it sits directly under it. Absent on the fallback path. */}
           {person.email && <p className="truncate pl-5 text-xs text-slate-400">{person.email}</p>}
+          {emailProblems.map((problem) => (
+            <p key={problem} className="pl-5 text-xs font-semibold text-amber-300">
+              Check email: {problem}
+            </p>
+          ))}
           <p className="truncate pl-5 text-xs text-slate-500">
             {person.company || '—'} · joined {formatDate(person.created_at)}
             {summary.length > 0 && <span className="text-slate-600"> · {summary.join(' · ')}</span>}
@@ -603,10 +612,13 @@ function People({
     })
   }, [])
 
+  const problems = useMemo(() => emailIssues(people ?? []), [people])
+
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
     const matchesFilter = (p) => {
       if (filter === 'all') return true
+      if (filter === 'email') return problems.has(p.id)
       if (filter === 'applicants') return isApplicant(p)
       if (filter === 'unread') return (unreadByPerson[p.id] ?? 0) > 0
       if (filter === 'posted') return projectOwnerIds.has(p.id)
@@ -627,7 +639,7 @@ function People({
       // else, where dropping the old row is the point.
       return (matchesFilter(p) && matchesCountry(p)) || openIds.has(p.id)
     })
-  }, [people, unreadByPerson, projectOwnerIds, filter, country, query, openIds])
+  }, [people, unreadByPerson, projectOwnerIds, problems, filter, country, query, openIds])
 
   // Only countries somebody actually has, most common first, so the list is as
   // long as the network is wide rather than 249 entries with almost no matches.
@@ -649,8 +661,9 @@ function People({
       manager: all.filter((p) => p.role === 'manager').length,
       business: all.filter((p) => p.role === 'business').length,
       posted: all.filter((p) => projectOwnerIds.has(p.id)).length,
+      email: all.filter((p) => problems.has(p.id)).length,
     }
-  }, [people, unreadByPerson, projectOwnerIds])
+  }, [people, unreadByPerson, projectOwnerIds, problems])
 
   const newCount = (people ?? []).filter(
     (p) => Date.now() - new Date(p.created_at).getTime() < NEW_FOR_MS
@@ -735,6 +748,7 @@ function People({
                 isSelf={p.id === currentUserId}
                 viewerId={currentUserId}
                 unread={unreadByPerson[p.id] ?? 0}
+                emailProblems={problems.get(p.id)}
                 open={openIds.has(p.id)}
                 onToggle={() => toggleOpen(p.id)}
                 onDone={onChanged}
