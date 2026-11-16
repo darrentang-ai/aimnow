@@ -13,11 +13,11 @@ export default function Hero() {
               hero's own content instead, which is the first thing a reader
               actually sees.
 
-              Scoped carefully to what the feature is — a thread between an
-              account holder and AIM Now. It is NOT business-to-manager chat,
-              which the Premium card still advertises and the Portal still
-              cannot do. It also promises no reply time, since nothing notifies
-              an admin until they next sign in. */}
+              Currently announces the Academy. It links to /academy, which
+              asks for sign-in itself, rather than to the portal. The free
+              course is the thing being offered; the certificate fee is on
+              the Academy pages, where the course is described. (The previous
+              announcement was messaging AIM Now from the dashboard.) */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -25,7 +25,7 @@ export default function Hero() {
             className="mb-8 flex justify-center"
           >
             <Link
-              to="/portal"
+              to="/academy"
               className="group relative isolate inline-flex max-w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1 overflow-hidden rounded-full border border-cyan-glow/25 bg-cyan-glow/5 px-4 py-1.5 text-xs transition-colors animate-pillGlow hover:border-cyan-glow/50 hover:bg-cyan-glow/10 motion-reduce:animate-none sm:text-sm"
             >
               {/* The glint. aria-hidden and pointer-events-none because it is
@@ -45,7 +45,7 @@ export default function Hero() {
                   item it wrapped onto a line of its own once the sentence broke
                   at phone width. */}
               <span className="text-slate-300">
-                Message AIM Now from your dashboard{' '}
+                AIM Now Academy is open: try the first course free{' '}
                 <svg viewBox="0 0 24 24" className="inline h-3.5 w-3.5 shrink-0 align-[-0.1em] text-cyan-glow transition-transform group-hover:translate-x-0.5" fill="none">
                   <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
