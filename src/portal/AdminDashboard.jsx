@@ -258,6 +258,31 @@ function AssignControls({ project, managers, viewerId, unread = 0, onDone, onThr
 
 // `open` is owned by People rather than held here, because the list needs to
 // know what is open to avoid filtering it away — see visible() below.
+// Copies text and says so for a couple of seconds. The clipboard can be
+// refused (an insecure page, a blocked permission), in which case the button
+// says that instead of pretending.
+function CopyButton({ text }) {
+  const [state, setState] = useState('idle')
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setState('copied')
+    } catch {
+      setState('failed')
+    }
+    setTimeout(() => setState('idle'), 2000)
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="shrink-0 rounded border border-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400 transition-colors hover:border-cyan-glow/40 hover:text-cyan-glow"
+    >
+      {state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy'}
+    </button>
+  )
+}
+
 function PersonRow({ person, isSelf, viewerId, unread = 0, emailProblems = [], open, onToggle, onDone, onThreadRead }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -337,11 +362,12 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, emailProblems = [], o
         {/* Only the identity block toggles. The role and plan selects sit
             outside it — a click meant for a dropdown must never also collapse
             the row out from under it. */}
+        <div className="min-w-0 flex-1">
         <button
           type="button"
           onClick={onToggle}
           aria-expanded={open}
-          className="group min-w-0 flex-1 text-left"
+          className="group block w-full text-left"
         >
           <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
             <svg
@@ -377,19 +403,29 @@ function PersonRow({ person, isSelf, viewerId, unread = 0, emailProblems = [], o
               </span>
             )}
           </p>
-          {/* Email is the only thing that tells two people with the same name
-              apart, so it sits directly under it. Absent on the fallback path. */}
-          {person.email && <p className="truncate pl-5 text-xs text-slate-400">{person.email}</p>}
-          {emailProblems.map((problem) => (
-            <p key={problem} className="pl-5 text-xs font-semibold text-amber-300">
-              Check email: {problem}
-            </p>
-          ))}
+        </button>
+        {/* Email is the only thing that tells two people with the same name
+            apart, so it sits directly under it. Absent on the fallback path.
+            Outside the toggle button so the address can be selected and the
+            Copy button does not also open the row. */}
+        {person.email && (
+          <p className="flex items-center gap-2 pl-5 text-xs text-slate-400">
+            <span className="truncate">{person.email}</span>
+            <CopyButton text={person.email} />
+          </p>
+        )}
+        {emailProblems.map((problem) => (
+          <p key={problem} className="pl-5 text-xs font-semibold text-amber-300">
+            Check email: {problem}
+          </p>
+        ))}
+        <button type="button" onClick={onToggle} aria-expanded={open} className="block w-full text-left">
           <p className="truncate pl-5 text-xs text-slate-500">
             {person.company || '—'} · joined {formatDate(person.created_at)}
             {summary.length > 0 && <span className="text-slate-600"> · {summary.join(' · ')}</span>}
           </p>
         </button>
+        </div>
 
         {/* Changing your own role here would drop your admin rights with no way
             back in the UI, so your own row is read-only. */}
